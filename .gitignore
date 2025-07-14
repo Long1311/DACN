@@ -1,0 +1,12 @@
+# Ignore backend build files
+Web_TMDT/target/
+Web_TMDT/*.log
+
+# Ignore frontend build files and node modules
+web_tmdt_fe/node_modules/
+web_tmdt_fe/build/
+
+# IDE/editor configs
+*.iml
+.idea/
+.vscode/

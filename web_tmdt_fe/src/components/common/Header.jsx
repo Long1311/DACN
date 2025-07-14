@@ -215,7 +215,6 @@ const HeaderComponent = () => {
           className="text-2xl font-bold text-blue-600 cursor-pointer flex items-center whitespace-nowrap"
           onClick={() => navigate("/")}
         >
-          <ShoppingCartOutlined className="mr-2" />
           LongStore
         </div>
       </div>

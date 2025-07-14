@@ -12,8 +12,6 @@ public interface SanPhamVariantRepository extends JpaRepository<SanPhamVariant, 
 
     List<SanPhamVariant> findBySanPham_Loai_Id(Long loaiId);
 
-    List<SanPhamVariant> findBySanPham_DiscountGreaterThan(int discount);
-
     List<SanPhamVariant> findTop8ByOrderBySanPham_RatingDesc();
 
     Page<SanPhamVariant> findBySanPham_TenspContainingIgnoreCase(String keyword, Pageable pageable);

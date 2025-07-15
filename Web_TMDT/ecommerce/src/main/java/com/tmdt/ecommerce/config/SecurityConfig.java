@@ -43,7 +43,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // ✅ Cho phép USER và ADMIN dùng profile, đổi mật khẩu, avatar
-                        .requestMatchers("/api/users/profile", "/api/users/change-password").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+                        .requestMatchers("/api/users/profile", "/api/users/change-password","/api/orders/stats/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/users/profile").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/users/upload-avatar").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
 

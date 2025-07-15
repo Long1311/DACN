@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 import java.nio.file.*;
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -122,6 +123,11 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi khi lưu ảnh: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/stats/new-users-by-month")
+    public ResponseEntity<List<Integer>> getNewUsersByMonth() {
+        return ResponseEntity.ok(userService.countNewUsersByMonth());
     }
 
 }

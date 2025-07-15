@@ -1,6 +1,9 @@
 package com.tmdt.ecommerce.model;
 
 import jakarta.persistence.*;
+
+import java.util.Date;
+
 @Entity
 @Table(name = "users")
 public class User {
@@ -22,6 +25,10 @@ public class User {
     private String address;
     private String gender;
     private String avatarUrl;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "created_at")
+    private java.util.Date createdAt;
 
     public User() {
     }
@@ -116,5 +123,13 @@ public class User {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
 }

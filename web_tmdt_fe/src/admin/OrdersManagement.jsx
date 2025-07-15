@@ -42,7 +42,6 @@ const OrdersManagement = () => {
           date: 'Chưa có ngày',
           total: `${order.thanhtien.toLocaleString('vi-VN')}₫`,
           status: convertStatus(order.trangthai),
-          payment: convertPayment(order.trangthai),
         }));
         setOrders(formatted);
       })
@@ -66,16 +65,6 @@ const OrdersManagement = () => {
     }
   };
 
-  const convertPayment = (status) => {
-    switch (status) {
-      case 'COMPLETED':
-        return 'Đã thanh toán';
-      case 'CANCELLED':
-        return 'Hoàn tiền';
-      default:
-        return 'Chưa thanh toán';
-    }
-  };
 
   const orderColumns = [
     {
@@ -123,28 +112,7 @@ const OrdersManagement = () => {
         return <span style={{ color }}>{status}</span>;
       },
     },
-    {
-      title: 'Thanh toán',
-      dataIndex: 'payment',
-      key: 'payment',
-      render: (payment) => {
-        let color = '';
-        switch (payment) {
-          case 'Đã thanh toán':
-            color = '#10B981';
-            break;
-          case 'Chưa thanh toán':
-            color = '#F59E0B';
-            break;
-          case 'Hoàn tiền':
-            color = '#EF4444';
-            break;
-          default:
-            color = '#000';
-        }
-        return <span style={{ color }}>{payment}</span>;
-      },
-    },
+  
     {
       title: 'Thao tác',
       key: 'action',

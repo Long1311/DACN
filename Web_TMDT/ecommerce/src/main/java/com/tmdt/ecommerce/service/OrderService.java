@@ -12,8 +12,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -133,6 +132,51 @@ public class OrderService {
                 .mapToDouble(item -> item.getSoluong() * item.getVariant().getGia().doubleValue())
                 .sum();
     }
+
+    public List<Double> getMonthlyRevenue() {
+        List<Double> revenueByMonth = new ArrayList<>(Collections.nCopies(12, 0.0));
+        List<Orders> allOrders = ordersRepository.findAll();
+        for (Orders order : allOrders) {
+            if (order.getNgaydat() != null) {
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(order.getNgaydat());
+                int month = cal.get(Calendar.MONTH); // Từ 0 đến 11
+                revenueByMonth.set(month, revenueByMonth.get(month) + order.getThanhtien());
+            }
+        }
+        return revenueByMonth;
+    }
+
+
+    public Map<String, Long> getOrderStatusCounts() {
+        List<Orders> allOrders = ordersRepository.findAll();
+
+        Map<String, Long> rawStatusMap = allOrders.stream()
+                .collect(Collectors.groupingBy(Orders::getTrangthai, Collectors.counting()));
+
+        Map<String, Long> mappedStatus = new HashMap<>();
+        mappedStatus.put("Đã giao", rawStatusMap.getOrDefault("COMPLETED", 0L));
+        mappedStatus.put("Đang giao", rawStatusMap.getOrDefault("SHIPPING", 0L));
+        mappedStatus.put("Chờ xác nhận", rawStatusMap.getOrDefault("PENDING", 0L));
+        mappedStatus.put("Đã hủy", rawStatusMap.getOrDefault("CANCELLED", 0L));
+
+        return mappedStatus;
+    }
+
+    public List<Integer> countOrdersByMonth() {
+        List<Orders> allOrders = ordersRepository.findAll();
+        List<Integer> counts = new ArrayList<>(Collections.nCopies(12, 0));
+        for (Orders order : allOrders) {
+            if (order.getNgaydat() != null) {
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(order.getNgaydat());
+                int month = cal.get(Calendar.MONTH);
+                counts.set(month, counts.get(month) + 1);
+            }
+        }
+        return counts;
+    }
+
 
     private OrderResponse convertToOrderResponse(Orders order) {
         return new OrderResponse(

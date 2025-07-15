@@ -15,8 +15,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -62,6 +61,9 @@ public class UserService {
         user.setName(request.getName());
         user.setPhone(request.getPhone());
         user.setAddress(request.getAddress());
+
+        user.setCreatedAt(new Date());
+
         User savedUser = userRepository.save(user);
         return convertToUserResponse(savedUser);
     }
@@ -172,6 +174,22 @@ public class UserService {
         }
         userRepository.deleteById(id);
     }
+
+    public List<Integer> countNewUsersByMonth() {
+        List<Integer> monthlyCounts = new ArrayList<>(Collections.nCopies(12, 0));
+
+        List<User> allUsers = userRepository.findAll();
+        for (User user : allUsers) {
+            if (user.getCreatedAt() != null) {
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(user.getCreatedAt());
+                int month = cal.get(Calendar.MONTH);
+                monthlyCounts.set(month, monthlyCounts.get(month) + 1);
+            }
+        }
+        return monthlyCounts;
+    }
+
 
     //Chuyển đổi từ User sang UserResponse
     private UserResponse convertToUserResponse(User user) {

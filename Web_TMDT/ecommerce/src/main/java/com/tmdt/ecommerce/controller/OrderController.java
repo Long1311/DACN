@@ -64,4 +64,19 @@ public class OrderController {
         return ResponseEntity.ok(responses);
     }
 
+    @GetMapping("/stats/revenue-by-month")
+    public ResponseEntity<List<Double>> getRevenueByMonth() {
+        return ResponseEntity.ok(orderService.getMonthlyRevenue());
+    }
+
+    @GetMapping("/stats/status-count")
+    public ResponseEntity<?> getOrderStatusCounts() {
+        return ResponseEntity.ok(orderService.getOrderStatusCounts());
+    }
+
+    @GetMapping("/stats/orders-by-month")
+    public ResponseEntity<List<Integer>> countOrdersByMonth() {
+        return ResponseEntity.ok(orderService.countOrdersByMonth());
+    }
+
 }

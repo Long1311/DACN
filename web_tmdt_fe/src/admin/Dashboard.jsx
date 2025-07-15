@@ -21,6 +21,7 @@ import ReactECharts from "echarts-for-react";
 import axios from "axios";
 
 import {
+  useDashboardChartData,
   getBarChartOptions,
   getPieChartOptions,
   getLineChartOptions,
@@ -39,6 +40,8 @@ const Dashboard = () => {
 
   const [recentOrders, setRecentOrders] = useState([]);
 
+  const { revenueData, statusData, userTrend, orderTrend, loading } = useDashboardChartData();
+
   useEffect(() => {
     axios
       .get("http://localhost:8080/api/dashboard")
@@ -56,12 +59,13 @@ const Dashboard = () => {
             key: order.id,
             id: "DH" + String(order.id).padStart(3, "0"),
             customer: `User ${order.userId}`,
-            date: "Chưa có ngày", // Nếu có order.createdAt thì format lại tại đây
+            date: order.ngaydat
+              ? new Date(order.ngaydat).toLocaleDateString("vi-VN")
+              : "Không rõ",
             total: `${order.thanhtien.toLocaleString("vi-VN")}₫`,
             status: convertStatus(order.trangthai),
-            payment: convertPayment(order.trangthai),
           }))
-          .slice(0, 5); // Lấy 5 đơn hàng gần nhất
+          .slice(0, 5);
         setRecentOrders(formatted);
       })
       .catch((err) =>
@@ -84,83 +88,22 @@ const Dashboard = () => {
     }
   };
 
-  const convertPayment = (status) => {
-    switch (status) {
-      case "COMPLETED":
-        return "Đã thanh toán";
-      case "CANCELLED":
-        return "Hoàn tiền";
-      default:
-        return "Chưa thanh toán";
-    }
-  };
-
   const orderColumns = [
-    {
-      title: "Mã đơn",
-      dataIndex: "id",
-      key: "id",
-    },
-    {
-      title: "Khách hàng",
-      dataIndex: "customer",
-      key: "customer",
-    },
-    {
-      title: "Ngày đặt",
-      dataIndex: "date",
-      key: "date",
-    },
-    {
-      title: "Tổng tiền",
-      dataIndex: "total",
-      key: "total",
-    },
+    { title: "Mã đơn", dataIndex: "id", key: "id" },
+    { title: "Khách hàng", dataIndex: "customer", key: "customer" },
+    { title: "Ngày đặt", dataIndex: "date", key: "date" },
+    { title: "Tổng tiền", dataIndex: "total", key: "total" },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       render: (status) => {
-        let color = "";
-        switch (status) {
-          case "Đã giao":
-            color = "#10B981";
-            break;
-          case "Đang giao":
-            color = "#0EA5E9";
-            break;
-          case "Chờ xác nhận":
-            color = "#F59E0B";
-            break;
-          case "Đã hủy":
-            color = "#EF4444";
-            break;
-          default:
-            color = "#000";
-        }
+        let color = "#000";
+        if (status === "Đã giao") color = "#10B981";
+        else if (status === "Đang giao") color = "#0EA5E9";
+        else if (status === "Chờ xác nhận") color = "#F59E0B";
+        else if (status === "Đã hủy") color = "#EF4444";
         return <span style={{ color }}>{status}</span>;
-      },
-    },
-    {
-      title: "Thanh toán",
-      dataIndex: "payment",
-      key: "payment",
-      render: (payment) => {
-        let color = "";
-        switch (payment) {
-          case "Đã thanh toán":
-            color = "#10B981";
-            break;
-          case "Chưa thanh toán":
-            color = "#F59E0B";
-            break;
-          case "Hoàn tiền":
-            color = "#EF4444";
-            break;
-          default:
-            color = "#000";
-        }
-        return <span style={{ color }}>{payment}</span>;
       },
     },
     {
@@ -251,7 +194,7 @@ const Dashboard = () => {
         <Col xs={24} lg={16}>
           <Card title="Doanh thu theo tháng" className="h-full shadow-sm">
             <ReactECharts
-              option={getBarChartOptions()}
+              option={getBarChartOptions(revenueData)}
               style={{ height: 350 }}
             />
           </Card>
@@ -259,7 +202,7 @@ const Dashboard = () => {
         <Col xs={24} lg={8}>
           <Card title="Phân bổ đơn hàng" className="h-full shadow-sm">
             <ReactECharts
-              option={getPieChartOptions()}
+              option={getPieChartOptions(statusData)}
               style={{ height: 350 }}
             />
           </Card>
@@ -270,7 +213,7 @@ const Dashboard = () => {
         <Col span={24}>
           <Card title="Xu hướng" className="shadow-sm">
             <ReactECharts
-              option={getLineChartOptions()}
+              option={getLineChartOptions(userTrend, orderTrend)}
               style={{ height: 350 }}
             />
           </Card>

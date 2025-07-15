@@ -39,7 +39,7 @@ public class SecurityConfig {
                         // ✅ Public APIs
                         .requestMatchers("/api/auth/**", "/api/sanpham/**", "/api/variants/**",
                                 "/api/variants/*/related", "/images/**", "/profiles/**", "/products/**",
-                                "/api/payment/**", "/api/upload/**"
+                                "/api/payment/**", "/api/upload/**", "/api/danhmuc/**", "/api/dashboard"
                         ).permitAll()
 
                         // ✅ Cho phép USER và ADMIN dùng profile, đổi mật khẩu, avatar

@@ -48,7 +48,7 @@ public class UserController {
             Page<UserResponse> pagedUsers = userService.getAllUsers(page, size);
             return ResponseEntity.ok(pagedUsers);
         } else {
-            return ResponseEntity.ok(userService.getAllUsers()); // List<UserResponse>
+            return ResponseEntity.ok(userService.getAllUsers());
         }
     }
 

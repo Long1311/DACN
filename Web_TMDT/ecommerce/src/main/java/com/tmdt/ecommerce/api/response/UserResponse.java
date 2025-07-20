@@ -10,11 +10,12 @@ public class UserResponse {
     private String address;
     private String gender;
     private String avatarUrl;
+    private boolean enabled;
 
     public UserResponse() {
     }
 
-    public UserResponse(Long id, String username, String email, String quyentruycap, String name, String phone, String address, String gender, String avatarUrl) {
+    public UserResponse(Long id, String username, String email, String quyentruycap, String name, String phone, String address, String gender, String avatarUrl, boolean enabled) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -24,6 +25,7 @@ public class UserResponse {
         this.address = address;
         this.gender = gender;
         this.avatarUrl = avatarUrl;
+        this.enabled = enabled;
     }
 
     public Long getId() {
@@ -96,5 +98,13 @@ public class UserResponse {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

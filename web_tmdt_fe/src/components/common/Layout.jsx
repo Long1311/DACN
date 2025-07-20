@@ -9,7 +9,6 @@ const Layout = ({ children }) => {
       <Header />
       <Navbar />
       <main className="pt-28">{children}</main>{" "}
-      {/* Nội dung giữa, do component con cung cấp */}
       <Footer />
     </div>
   );

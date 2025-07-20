@@ -4,7 +4,6 @@ public class SpecsResponse {
     private String screen;
     private String cpu;
     private String ram;
-    private String storageRange;
     private String camera;
     private String frontCamera;
     private String battery;
@@ -13,11 +12,10 @@ public class SpecsResponse {
     public SpecsResponse() {
     }
 
-    public SpecsResponse(String screen, String cpu, String ram, String storageRange, String camera, String frontCamera, String battery, String os) {
+    public SpecsResponse(String screen, String cpu, String ram, String camera, String frontCamera, String battery, String os) {
         this.screen = screen;
         this.cpu = cpu;
         this.ram = ram;
-        this.storageRange = storageRange;
         this.camera = camera;
         this.frontCamera = frontCamera;
         this.battery = battery;
@@ -46,14 +44,6 @@ public class SpecsResponse {
 
     public void setRam(String ram) {
         this.ram = ram;
-    }
-
-    public String getStorageRange() {
-        return storageRange;
-    }
-
-    public void setStorageRange(String storageRange) {
-        this.storageRange = storageRange;
     }
 
     public String getCamera() {

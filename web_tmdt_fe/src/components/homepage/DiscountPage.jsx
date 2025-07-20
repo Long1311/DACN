@@ -39,21 +39,21 @@ const DiscountPage = () => {
   const fetchDiscountProducts = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:8080/api/variants/discount");
+      const res = await axios.get(
+        "http://localhost:8080/api/variants/discount"
+      );
       const data = Array.isArray(res.data) ? res.data : [];
 
       const formatted = data.map((product) => {
-        // Nếu BE trả về discount: dùng luôn
-        // Nếu không: tự tính discount từ gia và originalPrice
         let discount = product.discount;
 
         if (!discount && product.originalPrice && product.gia) {
           discount = Math.round(
-            ((product.originalPrice - product.gia) / product.originalPrice) * 100
+            ((product.originalPrice - product.gia) / product.originalPrice) *
+              100
           );
         }
 
-        // Nếu BE không trả originalPrice: tự tính ngược lại
         const originalPrice =
           product.gia && discount
             ? Math.round(product.gia / (1 - discount / 100))
@@ -96,7 +96,10 @@ const DiscountPage = () => {
                   cover={
                     <div className="pt-4 px-4 relative">
                       {product.discount > 0 ? (
-                        <Badge.Ribbon text={`-${product.discount}%`} color="red">
+                        <Badge.Ribbon
+                          text={`-${product.discount}%`}
+                          color="red"
+                        >
                           <img
                             alt={product.tensp || "Product"}
                             src={getSafeImageUrl(product.imageUrl)}

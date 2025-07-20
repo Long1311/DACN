@@ -25,6 +25,7 @@ public class User {
     private String address;
     private String gender;
     private String avatarUrl;
+    private boolean enabled;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "created_at")
@@ -33,7 +34,7 @@ public class User {
     public User() {
     }
 
-    public User(String username, String password, String email, String quyentruycap, String name, String phone, String address, String gender, String avatarUrl) {
+    public User(String username, String password, String email, String quyentruycap, String name, String phone, String address, String gender, String avatarUrl, boolean enabled) {
         this.username = username;
         this.password = password;
         this.email = email;
@@ -43,6 +44,7 @@ public class User {
         this.address = address;
         this.gender = gender;
         this.avatarUrl = avatarUrl;
+        this.enabled = enabled;
     }
 
     public Long getId() {
@@ -123,6 +125,14 @@ public class User {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     public Date getCreatedAt() {

@@ -3,24 +3,20 @@ package com.tmdt.ecommerce.api.response;
 public class SanPhamResponse {
     private Long id;
     private String tensp;
-    private Double gia;
     private String ghichu;
     private Double rating;
     private Integer reviewCount;
     private SpecsResponse specs;
-    private Double originalPrice;
     private Integer discount;
     private Long loaiId;
 
     public SanPhamResponse() {
     }
 
-    public SanPhamResponse(Long id, String tensp, Double gia, Double originalPrice, Integer discount, String ghichu,
+    public SanPhamResponse(Long id, String tensp, Integer discount, String ghichu,
                            Double rating, Integer reviewCount, SpecsResponse specs, Long loaiId) {
         this.id = id;
         this.tensp = tensp;
-        this.gia = gia;
-        this.originalPrice = originalPrice;
         this.discount = discount;
         this.ghichu = ghichu;
         this.rating = rating;
@@ -44,14 +40,6 @@ public class SanPhamResponse {
 
     public void setTensp(String tensp) {
         this.tensp = tensp;
-    }
-
-    public Double getGia() {
-        return gia;
-    }
-
-    public void setGia(Double gia) {
-        this.gia = gia;
     }
 
     public String getGhichu() {
@@ -92,14 +80,6 @@ public class SanPhamResponse {
 
     public void setSpecs(SpecsResponse specs) {
         this.specs = specs;
-    }
-
-    public Double getOriginalPrice() {
-        return originalPrice;
-    }
-
-    public void setOriginalPrice(Double originalPrice) {
-        this.originalPrice = originalPrice;
     }
 
     public Integer getDiscount() {

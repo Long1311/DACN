@@ -30,7 +30,6 @@ const CategoriesManagement = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
 
-  // Fetch categories from backend
   const fetchCategories = async (keyword = "") => {
     setLoading(true);
     try {

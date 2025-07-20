@@ -1,10 +1,13 @@
 package com.tmdt.ecommerce.controller;
 
 import com.tmdt.ecommerce.api.response.SanPhamVariantResponse;
+import com.tmdt.ecommerce.dto.request.AddProductRequest;
 import com.tmdt.ecommerce.model.SanPhamVariant;
 import com.tmdt.ecommerce.service.SanPhamVariantService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +28,12 @@ public class SanPhamVariantController {
         return variants.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
+    @PutMapping("/{id}/toggle-disabled")
+    public ResponseEntity<String> toggleDisabled(@PathVariable Long id) {
+        boolean isDisabled = variantService.toggleDisabled(id);
+        return ResponseEntity.ok(isDisabled ? "Sản phẩm đã bị khóa" : "Sản phẩm đã được mở khóa");
+    }
+
     @GetMapping("/search")
     public List<SanPhamVariantResponse> searchVariantsByLoaiId(@RequestParam(required = false) Long loaiId) {
         List<SanPhamVariant> variants = (loaiId != null)
@@ -32,6 +41,17 @@ public class SanPhamVariantController {
                 : variantService.getAllVariants();
 
         return variants.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @PostMapping("/add")
+    public ResponseEntity<?> addVariantProduct(@RequestBody AddProductRequest request) {
+        try {
+            variantService.addProduct(request);
+            return ResponseEntity.ok("Thêm sản phẩm thành công!");
+        } catch (Exception e) {
+            e.printStackTrace(); // để debug nếu cần
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Thêm sản phẩm thất bại!");
+        }
     }
 
     @GetMapping("/search/keyword")
@@ -113,7 +133,8 @@ public class SanPhamVariantController {
                 variant.getImageUrl(),
                 variant.getSanPham().getId(),
                 variant.getSanPham().getTensp(),
-                variant.getSanPham().getOriginalPrice()
+                variant.getOriginalPrice(),
+                variant.isDisabled()
         );
     }
 }

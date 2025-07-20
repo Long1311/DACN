@@ -1,15 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import {
-  Row,
-  Col,
-  Card,
-  Button,
-  Typography,
-  Rate,
-  message,
-  Spin,
-} from "antd";
+import { Row, Col, Card, Button, Typography, Rate, message, Spin } from "antd";
 import { ShoppingCartOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 

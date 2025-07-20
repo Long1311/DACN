@@ -15,7 +15,6 @@ const ThanhToan = () => {
     address: "",
   });
 
-  // Xử lý kết quả thanh toán trả về từ VNPay
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const vnpCode = params.get("vnp_ResponseCode");

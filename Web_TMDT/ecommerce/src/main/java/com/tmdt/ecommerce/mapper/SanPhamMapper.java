@@ -13,8 +13,6 @@ public class SanPhamMapper {
         if (response != null) {
             sanPham.setId(response.getId());
             sanPham.setTensp(response.getTensp());
-            sanPham.setGia(response.getGia());
-            sanPham.setOriginalPrice(response.getOriginalPrice());
             sanPham.setDiscount(response.getDiscount());
             sanPham.setGhichu(response.getGhichu());
             sanPham.setRating(response.getRating());
@@ -31,7 +29,6 @@ public class SanPhamMapper {
                 specs.setScreen(response.getSpecs().getScreen());
                 specs.setCpu(response.getSpecs().getCpu());
                 specs.setRam(response.getSpecs().getRam());
-                specs.setStorageRange(response.getSpecs().getStorageRange());
                 specs.setCamera(response.getSpecs().getCamera());
                 specs.setFrontCamera(response.getSpecs().getFrontCamera());
                 specs.setBattery(response.getSpecs().getBattery());
@@ -49,7 +46,6 @@ public class SanPhamMapper {
                 sanPham.getSpecs().getScreen(),
                 sanPham.getSpecs().getCpu(),
                 sanPham.getSpecs().getRam(),
-                sanPham.getSpecs().getStorageRange(),
                 sanPham.getSpecs().getCamera(),
                 sanPham.getSpecs().getFrontCamera(),
                 sanPham.getSpecs().getBattery(),
@@ -59,8 +55,6 @@ public class SanPhamMapper {
         return new SanPhamResponse(
                 sanPham.getId(),
                 sanPham.getTensp(),
-                sanPham.getGia(),
-                sanPham.getOriginalPrice(),
                 sanPham.getDiscount(),
                 sanPham.getGhichu(),
                 sanPham.getRating(),

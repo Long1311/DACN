@@ -14,8 +14,13 @@ public class SanPhamVariant {
     private Double gia;
     private Integer soluong;
 
+    @Column(nullable = false)
+    private boolean disabled = false;
+
     @Column(name = "image_url")
     private String imageUrl;
+
+    private Double originalPrice;
 
     @ManyToOne
     @JoinColumn(name = "sanpham_id")
@@ -61,12 +66,28 @@ public class SanPhamVariant {
         this.soluong = soluong;
     }
 
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
+    }
+
     public String getImageUrl() {
         return imageUrl;
     }
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public Double getOriginalPrice() {
+        return originalPrice;
+    }
+
+    public void setOriginalPrice(Double originalPrice) {
+        this.originalPrice = originalPrice;
     }
 
     public SanPham getSanPham() {

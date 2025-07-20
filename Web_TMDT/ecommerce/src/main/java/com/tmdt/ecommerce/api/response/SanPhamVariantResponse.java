@@ -10,11 +10,12 @@ public class SanPhamVariantResponse {
     private Long sanPhamId;
     private String tensp;
     private Double originalPrice;
+    private boolean disabled;
 
     public SanPhamVariantResponse() {
     }
 
-    public SanPhamVariantResponse(Long id, String color, String storage, Double gia, Integer soluong, String imageUrl, Long sanPhamId, String tensp, Double originalPrice) {
+    public SanPhamVariantResponse(Long id, String color, String storage, Double gia, Integer soluong, String imageUrl, Long sanPhamId, String tensp, Double originalPrice, boolean disabled) {
         this.id = id;
         this.color = color;
         this.storage = storage;
@@ -24,6 +25,7 @@ public class SanPhamVariantResponse {
         this.sanPhamId = sanPhamId;
         this.tensp = tensp;
         this.originalPrice = originalPrice;
+        this.disabled = disabled;
     }
 
     public Long getId() {
@@ -96,5 +98,13 @@ public class SanPhamVariantResponse {
 
     public void setOriginalPrice(Double originalPrice) {
         this.originalPrice = originalPrice;
+    }
+
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
     }
 }

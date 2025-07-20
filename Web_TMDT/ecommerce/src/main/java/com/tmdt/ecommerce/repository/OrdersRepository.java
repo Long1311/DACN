@@ -14,4 +14,5 @@ public interface OrdersRepository extends JpaRepository<Orders, Long> {
 
     List<Orders> findByNgaydatBetween(Date start, Date end);
 
+    long countByTrangthaiAndNgaydatBetween(String trangthai, Date start, Date end);
 }

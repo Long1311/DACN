@@ -3,7 +3,7 @@ package com.tmdt.ecommerce.dto.request;
 public class UserRequest {
     private Long id;
     private String username;
-    private String password; // Chỉ dùng trong request để tạo/cập nhật
+    private String password;
     private String email;
     private String quyentruycap;
     private String name;
@@ -11,6 +11,7 @@ public class UserRequest {
     private String address;
     private String gender;
     private String avatarUrl;
+    private boolean enabled;
 
     public UserRequest() {
     }
@@ -106,5 +107,13 @@ public class UserRequest {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

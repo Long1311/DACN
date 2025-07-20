@@ -130,4 +130,15 @@ public class UserController {
         return ResponseEntity.ok(userService.countNewUsersByMonth());
     }
 
+    @PutMapping("/lock/{id}")
+    public ResponseEntity<?> lockUser(@PathVariable Long id) {
+        userService.setUserEnabled(id, false);
+        return ResponseEntity.ok("Tài khoản đã bị khóa");
+    }
+
+    @PutMapping("/unlock/{id}")
+    public ResponseEntity<?> unlockUser(@PathVariable Long id) {
+        userService.setUserEnabled(id, true);
+        return ResponseEntity.ok("Tài khoản đã được mở khóa");
+    }
 }

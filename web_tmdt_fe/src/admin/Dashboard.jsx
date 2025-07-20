@@ -1,21 +1,10 @@
 import React, { useEffect, useState } from "react";
-import {
-  Row,
-  Col,
-  Card,
-  Button,
-  Table,
-  Typography,
-  DatePicker,
-  Space,
-} from "antd";
+import { Row, Col, Card, Table, Typography } from "antd";
 import {
   TeamOutlined,
   ShoppingOutlined,
   DollarOutlined,
   RiseOutlined,
-  EditOutlined,
-  DeleteOutlined,
 } from "@ant-design/icons";
 import ReactECharts from "echarts-for-react";
 import axios from "axios";
@@ -28,7 +17,6 @@ import {
 } from "./bieudo";
 
 const { Title, Text } = Typography;
-const { RangePicker } = DatePicker;
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState({
@@ -38,9 +26,11 @@ const Dashboard = () => {
     conversionRate: 0,
   });
 
-  const [recentOrders, setRecentOrders] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+  const [lowStockProducts, setLowStockProducts] = useState([]);
 
-  const { revenueData, statusData, userTrend, orderTrend, loading } = useDashboardChartData();
+  const { revenueData, statusData, userTrend, orderTrend } =
+    useDashboardChartData();
 
   useEffect(() => {
     axios
@@ -48,75 +38,24 @@ const Dashboard = () => {
       .then((res) => setDashboardData(res.data))
       .catch((err) => console.error("Lỗi khi tải dữ liệu Dashboard:", err));
 
-    const token = localStorage.getItem("token");
     axios
-      .get("http://localhost:8080/api/orders/all", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      .get("http://localhost:8080/api/dashboard/top-selling")
+      .then((res) => setTopProducts(res.data))
+      .catch((err) => console.error("Lỗi tải top sản phẩm:", err));
+
+    axios
+      .get("http://localhost:8080/api/dashboard/low-stock")
       .then((res) => {
-        const formatted = res.data
-          .map((order) => ({
-            key: order.id,
-            id: "DH" + String(order.id).padStart(3, "0"),
-            customer: `User ${order.userId}`,
-            date: order.ngaydat
-              ? new Date(order.ngaydat).toLocaleDateString("vi-VN")
-              : "Không rõ",
-            total: `${order.thanhtien.toLocaleString("vi-VN")}₫`,
-            status: convertStatus(order.trangthai),
-          }))
-          .slice(0, 5);
-        setRecentOrders(formatted);
+        const mapped = res.data.content.map((item) => ({
+          id: item.variantId,
+          name: `${item.tensp} - ${item.color} - ${item.storage}`,
+          stock: item.soluong,
+          imageUrl: item.imageUrl,
+        }));
+        setLowStockProducts(mapped);
       })
-      .catch((err) =>
-        console.error("Lỗi khi tải danh sách đơn hàng gần đây:", err)
-      );
+      .catch((err) => console.error("Lỗi tải thống kê tồn kho:", err));
   }, []);
-
-  const convertStatus = (status) => {
-    switch (status) {
-      case "PENDING":
-        return "Chờ xác nhận";
-      case "SHIPPING":
-        return "Đang giao";
-      case "COMPLETED":
-        return "Đã giao";
-      case "CANCELLED":
-        return "Đã hủy";
-      default:
-        return status;
-    }
-  };
-
-  const orderColumns = [
-    { title: "Mã đơn", dataIndex: "id", key: "id" },
-    { title: "Khách hàng", dataIndex: "customer", key: "customer" },
-    { title: "Ngày đặt", dataIndex: "date", key: "date" },
-    { title: "Tổng tiền", dataIndex: "total", key: "total" },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => {
-        let color = "#000";
-        if (status === "Đã giao") color = "#10B981";
-        else if (status === "Đang giao") color = "#0EA5E9";
-        else if (status === "Chờ xác nhận") color = "#F59E0B";
-        else if (status === "Đã hủy") color = "#EF4444";
-        return <span style={{ color }}>{status}</span>;
-      },
-    },
-    {
-      title: "Thao tác",
-      key: "action",
-      render: () => (
-        <Space size="middle">
-          <Button type="text" icon={<EditOutlined />} />
-          <Button type="text" icon={<DeleteOutlined />} danger />
-        </Space>
-      ),
-    },
-  ];
 
   const cardData = [
     {
@@ -149,13 +88,107 @@ const Dashboard = () => {
     },
   ];
 
+  const topProductsColumns = [
+    {
+      title: "TOP",
+      key: "index",
+      render: (_, __, index) => `${index + 1}`,
+    },
+    {
+      title: "Ảnh",
+      dataIndex: "imageUrl",
+      key: "imageUrl",
+      render: (image) => {
+        const fullImageUrl = image?.startsWith("http")
+          ? image
+          : `http://localhost:8080/images/products/${image}`;
+
+        return (
+          <img
+            src={fullImageUrl}
+            alt="product"
+            style={{
+              width: 50,
+              height: 50,
+              objectFit: "cover",
+              borderRadius: 4,
+            }}
+            onError={(e) => (e.target.src = "/fallback.png")}
+          />
+        );
+      },
+    },
+    {
+      title: "Tên sản phẩm",
+      key: "tensp",
+      render: (_, record) =>
+        `${record.tensp} - ${record.color} - ${record.storage}`,
+    },
+    {
+      title: "Số lượng đã bán",
+      dataIndex: "totalSold",
+      key: "totalSold",
+    },
+    {
+      title: "Doanh thu (₫)",
+      dataIndex: "revenue",
+      key: "revenue",
+      render: (revenue) =>
+        revenue != null ? `${(revenue / 1_000_000).toFixed(1)}M₫` : "0₫",
+    },
+  ];
+
+  const top5Products = topProducts.slice(0, 5);
+
+  const lowStockColumns = [
+    {
+      title: "STT",
+      key: "index",
+      render: (_, __, index) => index + 1,
+    },
+    {
+      title: "Ảnh",
+      dataIndex: "imageUrl",
+      key: "imageUrl",
+      render: (image) => {
+        const fullImageUrl = image?.startsWith("http")
+          ? image
+          : `http://localhost:8080/images/products/${image}`;
+
+        return (
+          <img
+            src={fullImageUrl}
+            alt="product"
+            style={{
+              width: 50,
+              height: 50,
+              objectFit: "cover",
+              borderRadius: 4,
+            }}
+            onError={(e) => (e.target.src = "/fallback.png")}
+          />
+        );
+      },
+    },
+    { title: "Tên sản phẩm", dataIndex: "name", key: "name" },
+    { title: "Tồn kho", dataIndex: "stock", key: "stock" },
+    {
+      title: "Trạng thái",
+      key: "status",
+      render: (_, record) => (
+        <span className="text-red-600 font-semibold">
+          {record.stock > 0 ? "Sắp hết" : "Hết hàng"}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <Title level={4} className="m-0">
           Tổng quan
         </Title>
-        <RangePicker className="!rounded-button" />
       </div>
 
       <Row gutter={[24, 24]}>
@@ -222,12 +255,25 @@ const Dashboard = () => {
 
       <Row gutter={[24, 24]} className="mt-6">
         <Col span={24}>
-          <Card title="Đơn hàng gần đây" className="shadow-sm">
+          <Card title="Top 5 sản phẩm bán chạy nhất" className="shadow-sm">
             <Table
-              dataSource={recentOrders}
-              columns={orderColumns}
+              dataSource={top5Products}
+              columns={topProductsColumns}
               pagination={false}
-              className="overflow-x-auto"
+              rowKey="variantId"
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[24, 24]} className="mt-6">
+        <Col span={24}>
+          <Card title="Sản phẩm sắp hết hàng" className="shadow-sm">
+            <Table
+              dataSource={lowStockProducts}
+              columns={lowStockColumns}
+              pagination={false}
+              rowKey="id"
             />
           </Card>
         </Col>

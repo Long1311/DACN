@@ -162,86 +162,85 @@ const ProductDetail = () => {
   };
 
   const handleBuyNow = async () => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    message.warning("Bạn cần đăng nhập để mua sản phẩm!");
-    navigate("/login");
-    return;
-  }
-
-  if (!selectedVariant) {
-    message.error("Vui lòng chọn màu sắc và dung lượng!");
-    return;
-  }
-
-  if (selectedVariant.soLuong === 0) {
-    message.error("Sản phẩm đã hết hàng!");
-    return;
-  }
-
-  if (quantity < 1 || quantity > selectedVariant.soLuong) {
-    message.error("Số lượng không hợp lệ!");
-    return;
-  }
-
-  setIsLoading(true);
-  try {
-    const response = await axiosInstance.post("/api/payment/create-payment", {
-      mode: "detail",
-      variantId: selectedVariant.id,
-      soluong: quantity,
-      amount: selectedVariant.gia * quantity,
-    });
-
-    const { url: paymentUrl } = response.data;
-
-    if (!paymentUrl) {
-      message.error("Không nhận được URL thanh toán từ server!");
+    const token = localStorage.getItem("token");
+    if (!token) {
+      message.warning("Bạn cần đăng nhập để mua sản phẩm!");
+      navigate("/login");
       return;
     }
 
-    navigate("/thanhtoan", {
-      state: {
-        mode: "product",
+    if (!selectedVariant) {
+      message.error("Vui lòng chọn màu sắc và dung lượng!");
+      return;
+    }
+
+    if (selectedVariant.soLuong === 0) {
+      message.error("Sản phẩm đã hết hàng!");
+      return;
+    }
+
+    if (quantity < 1 || quantity > selectedVariant.soLuong) {
+      message.error("Số lượng không hợp lệ!");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.post("/api/payment/create-payment", {
+        mode: "detail",
         variantId: selectedVariant.id,
         soluong: quantity,
-        paymentUrl,
-        products: [
-          {
-            id: selectedVariant.id,
-            name: product.name,
-            price: selectedVariant.gia,
-            soluong: quantity,
-            color: selectedVariant.color,
-            storage: selectedVariant.storage,
-            image: selectedVariant.imageUrl,
-          },
-        ],
-      },
-    });
-  } catch (error) {
-    console.error("Lỗi trong handleBuyNow:", error);
-    const code = error.response?.status;
-    if (code === 401) {
-      message.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!");
-      localStorage.removeItem("token");
-      navigate("/login");
-    } else if (code === 403) {
-      message.error("Bạn không có quyền thực hiện hành động này!");
-    } else if (code === 400) {
-      message.error(
-        `Dữ liệu không hợp lệ: ${
-          error.response?.data?.message || "Vui lòng kiểm tra lại!"
-        }`
-      );
-    } else {
-      message.error("Không thể đặt hàng. Vui lòng thử lại!");
-    }
-  } finally {
-    setIsLoading(false);
-  }
-};
+        amount: selectedVariant.gia * quantity,
+      });
 
+      const { url: paymentUrl } = response.data;
+
+      if (!paymentUrl) {
+        message.error("Không nhận được URL thanh toán từ server!");
+        return;
+      }
+
+      navigate("/thanhtoan", {
+        state: {
+          mode: "product",
+          variantId: selectedVariant.id,
+          soluong: quantity,
+          paymentUrl,
+          products: [
+            {
+              id: selectedVariant.id,
+              name: product.name,
+              price: selectedVariant.gia,
+              soluong: quantity,
+              color: selectedVariant.color,
+              storage: selectedVariant.storage,
+              image: selectedVariant.imageUrl,
+            },
+          ],
+        },
+      });
+    } catch (error) {
+      console.error("Lỗi trong handleBuyNow:", error);
+      const code = error.response?.status;
+      if (code === 401) {
+        message.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại!");
+        localStorage.removeItem("token");
+        navigate("/login");
+      } else if (code === 403) {
+        message.error("Bạn không có quyền thực hiện hành động này!");
+      } else if (code === 400) {
+        message.error(
+          `Dữ liệu không hợp lệ: ${
+            error.response?.data?.message || "Vui lòng kiểm tra lại!"
+          }`
+        );
+      } else {
+        message.error("Không thể đặt hàng. Vui lòng thử lại!");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAddToCart = async () => {
     const token = localStorage.getItem("token");

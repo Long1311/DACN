@@ -8,21 +8,23 @@ import {
   Input,
   message,
   Modal,
+  Select,
 } from "antd";
 import {
   SearchOutlined,
-  FilterOutlined,
-  EditOutlined,
-  DeleteOutlined,
+  LockOutlined,
+  UnlockOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 
-const { Title, Text } = Typography;
-const { Search } = Input;
+const { Title } = Typography;
+const { Option } = Select;
 
 const UsersManagement = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     fetchUsers();
@@ -38,36 +40,36 @@ const UsersManagement = () => {
     setLoading(true);
     axios
       .get("http://localhost:8080/api/users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        const filtered = res.data.filter(
-          (user) =>
-            user.quyentruycap === "user" || user.quyentruycap === "ROLE_USER"
+        const data = res.data.filter(
+          (u) => u.quyentruycap === "user" || u.quyentruycap === "ROLE_USER"
         );
 
-        const mapped = filtered.map((user, index) => ({
-          key: index + 1,
-          id: `ND${user.id.toString().padStart(3, "0")}`,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          gender:
-            user.gender === "male"
-              ? "Nam"
-              : user.gender === "female"
-              ? "Nữ"
-              : "Khác",
-          status: "Hoạt động",
-        }));
-
-        setUsers(mapped);
+        setUsers(
+          data.map((u, i) => ({
+            key: i + 1,
+            id: `ND${u.id.toString().padStart(3, "0")}`,
+            rawId: u.id,
+            name: u.name,
+            email: u.email,
+            phone: u.phone,
+            gender:
+              u.gender === "male"
+                ? "Nam"
+                : u.gender === "female"
+                ? "Nữ"
+                : "Khác",
+            status: u.enabled ? "Mở" : "Đã khóa",
+            enabled: u.enabled,
+          }))
+        );
       })
       .catch((err) => {
         console.error("Lỗi khi lấy danh sách người dùng:", err);
-        if (err.response?.status === 403 || err.response?.status === 401) {
+        const code = err.response?.status;
+        if (code === 403 || code === 401) {
           message.error("Bạn không có quyền truy cập danh sách người dùng.");
         } else {
           message.error("Không thể tải danh sách người dùng.");
@@ -76,94 +78,88 @@ const UsersManagement = () => {
       .finally(() => setLoading(false));
   };
 
-  const handleEdit = (user) => {
-    message.info(`Chỉnh sửa: ${user.name}`);
-    // TODO: Hiển thị modal chỉnh sửa
-  };
+  const toggleUserStatus = (user) => {
+    const token = localStorage.getItem("token");
+    const isLocking = user.enabled;
+    const actionText = isLocking ? "khóa" : "mở khóa";
 
-  const handleDelete = (user) => {
     Modal.confirm({
-      title: `Xác nhận xoá người dùng`,
-      content: `Bạn có chắc muốn xoá ${user.name}?`,
-      okText: "Xoá",
-      okType: "danger",
+      title: `Xác nhận ${actionText} người dùng`,
+      content: `Bạn có chắc muốn ${actionText} ${user.name}?`,
+      okText: "Xác nhận",
+      okType: isLocking ? "danger" : "primary",
       cancelText: "Hủy",
       onOk: () => {
-        const token = localStorage.getItem("token");
         axios
-          .delete(
-            `http://localhost:8080/api/users/${user.id.replace("ND", "")}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
+          .put(
+            `http://localhost:8080/api/users/${isLocking ? "lock" : "unlock"}/${
+              user.rawId
+            }`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
           )
           .then(() => {
-            message.success("Xoá thành công!");
+            message.success(
+              `${
+                actionText.charAt(0).toUpperCase() + actionText.slice(1)
+              } thành công!`
+            );
             fetchUsers();
           })
           .catch((err) => {
-            console.error("Lỗi khi xoá người dùng:", err);
-            message.error("Không thể xoá người dùng.");
+            console.error("Lỗi khi đổi trạng thái:", err);
+            message.error("Không thể đổi trạng thái người dùng.");
           });
       },
     });
   };
 
+  const filteredUsers = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(searchValue.toLowerCase()) &&
+      (statusFilter === "all" || u.status === statusFilter)
+  );
+
   const userColumns = [
     {
       title: "STT",
       dataIndex: "key",
-      key: "key",
     },
     {
       title: "Họ tên",
       dataIndex: "name",
-      key: "name",
     },
     {
       title: "Email",
       dataIndex: "email",
-      key: "email",
     },
     {
       title: "Số điện thoại",
       dataIndex: "phone",
-      key: "phone",
     },
     {
       title: "Giới tính",
       dataIndex: "gender",
-      key: "gender",
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
-      key: "status",
       render: (status) => (
-        <Text>
-          <span
-            style={{ color: status === "Hoạt động" ? "#10B981" : "#EF4444" }}
-          >
-            {status}
-          </span>
-        </Text>
+        <span style={{ color: status === "Mở" ? "#10B981" : "#EF4444" }}>
+          {status}
+        </span>
       ),
     },
     {
       title: "Thao tác",
       key: "action",
       render: (_, record) => (
-        <Space size="middle">
-          <Button
-            type="text"
-            icon={<DeleteOutlined />}
-            danger
-            className="!rounded-button cursor-pointer whitespace-nowrap"
-            onClick={() => handleDelete(record)}
-          />
-        </Space>
+        <Button
+          type="text"
+          icon={record.enabled ? <LockOutlined /> : <UnlockOutlined />}
+          className="!rounded-button"
+          onClick={() => toggleUserStatus(record)}
+        />
       ),
     },
   ];
@@ -178,29 +174,29 @@ const UsersManagement = () => {
 
       <Card className="shadow-sm">
         <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-          <Search
+          <Input
             placeholder="Tìm kiếm người dùng..."
             allowClear
-            enterButton={<SearchOutlined />}
+            prefix={<SearchOutlined />}
             style={{ width: 300 }}
             className="!rounded-button"
-            onSearch={(value) => {
-              // TODO: Thêm filter hoặc gọi API search
-              message.info(`Tìm: ${value}`);
-            }}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
           />
-          <Space>
-            <Button
-              icon={<FilterOutlined />}
-              className="!rounded-button cursor-pointer whitespace-nowrap"
-            >
-              Lọc
-            </Button>
-          </Space>
+          <Select
+            value={statusFilter}
+            onChange={setStatusFilter}
+            style={{ width: 160 }}
+            className="!rounded-button"
+          >
+            <Option value="all">Tất cả trạng thái</Option>
+            <Option value="Mở">Đang hoạt động</Option>
+            <Option value="Đã khóa">Đã khóa</Option>
+          </Select>
         </div>
 
         <Table
-          dataSource={users}
+          dataSource={filteredUsers}
           columns={userColumns}
           loading={loading}
           pagination={{ pageSize: 10 }}

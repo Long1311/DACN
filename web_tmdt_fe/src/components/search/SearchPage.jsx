@@ -12,7 +12,6 @@ const SearchPage = () => {
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Lấy từ khóa từ URL query (vd: /search?keyword=iphone)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const key = params.get("keyword");

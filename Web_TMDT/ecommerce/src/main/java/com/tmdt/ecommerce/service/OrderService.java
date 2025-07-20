@@ -140,7 +140,7 @@ public class OrderService {
             if (order.getNgaydat() != null) {
                 Calendar cal = Calendar.getInstance();
                 cal.setTime(order.getNgaydat());
-                int month = cal.get(Calendar.MONTH); // Từ 0 đến 11
+                int month = cal.get(Calendar.MONTH);
                 revenueByMonth.set(month, revenueByMonth.get(month) + order.getThanhtien());
             }
         }
@@ -149,9 +149,22 @@ public class OrderService {
 
 
     public Map<String, Long> getOrderStatusCounts() {
-        List<Orders> allOrders = ordersRepository.findAll();
+        // Lấy thời gian hiện tại
+        Calendar now = Calendar.getInstance();
+        int currentMonth = now.get(Calendar.MONTH);
+        int currentYear = now.get(Calendar.YEAR);
 
-        Map<String, Long> rawStatusMap = allOrders.stream()
+        // Lọc đơn hàng theo tháng và năm hiện tại
+        List<Orders> currentMonthOrders = ordersRepository.findAll().stream()
+                .filter(order -> {
+                    Calendar orderCal = Calendar.getInstance();
+                    orderCal.setTime(order.getNgaydat());
+                    return orderCal.get(Calendar.MONTH) == currentMonth &&
+                            orderCal.get(Calendar.YEAR) == currentYear;
+                })
+                .collect(Collectors.toList());
+
+        Map<String, Long> rawStatusMap = currentMonthOrders.stream()
                 .collect(Collectors.groupingBy(Orders::getTrangthai, Collectors.counting()));
 
         Map<String, Long> mappedStatus = new HashMap<>();
@@ -162,6 +175,7 @@ public class OrderService {
 
         return mappedStatus;
     }
+
 
     public List<Integer> countOrdersByMonth() {
         List<Orders> allOrders = ordersRepository.findAll();
@@ -175,6 +189,19 @@ public class OrderService {
             }
         }
         return counts;
+    }
+
+    @Transactional
+    public void updateOrderStatus(Long orderId, String newStatus) {
+        Orders order = ordersRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        if (!List.of("PENDING", "SHIPPING", "COMPLETED", "CANCELLED").contains(newStatus)) {
+            throw new IllegalArgumentException("Trạng thái không hợp lệ: " + newStatus);
+        }
+
+        order.setTrangthai(newStatus);
+        ordersRepository.save(order);
     }
 
 

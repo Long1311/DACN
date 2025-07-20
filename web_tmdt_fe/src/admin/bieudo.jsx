@@ -76,8 +76,6 @@ export const useDashboardChartData = () => {
   return { revenueData, statusData, userTrend, orderTrend, loading };
 };
 
-
-
 // Các options biểu đồ
 export const getBarChartOptions = (data = []) => ({
   animation: false,

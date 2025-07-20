@@ -34,6 +34,7 @@ public class UserService {
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setQuyentruycap("user");
+        user.setEnabled(true);
         User savedUser = userRepository.save(user);
         return convertToUserResponse(savedUser);
     }
@@ -190,6 +191,14 @@ public class UserService {
         return monthlyCounts;
     }
 
+    public void setUserEnabled(Long userId, boolean enabled) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng với ID: " + userId));
+        user.setEnabled(enabled);
+        userRepository.save(user);
+    }
+
+
 
     //Chuyển đổi từ User sang UserResponse
     private UserResponse convertToUserResponse(User user) {
@@ -202,7 +211,8 @@ public class UserService {
                 user.getPhone(),
                 user.getAddress(),
                 user.getGender(),
-                user.getAvatarUrl()
+                user.getAvatarUrl(),
+                user.isEnabled()
         );
     }
 }

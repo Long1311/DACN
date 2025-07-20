@@ -9,22 +9,12 @@ public class SanPham {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "tensp")
     private String tensp;
 
-    @Column(name = "gia")
-    private Double gia;
-
-    @Column(name = "original_price")
-    private Double originalPrice;
-
-    @Column(name = "discount")
     private Integer discount;
 
-    @Column(name = "ghichu")
     private String ghichu;
 
-    @Column(name = "rating")
     private Double rating;
 
     @Column(name = "review_count")
@@ -40,9 +30,8 @@ public class SanPham {
     public SanPham() {
     }
 
-    public SanPham(String tensp, Double gia, String ghichu, DanhMuc loai) {
+    public SanPham(String tensp, String ghichu, DanhMuc loai) {
         this.tensp = tensp;
-        this.gia = gia;
         this.ghichu = ghichu;
         this.loai = loai;
     }
@@ -63,14 +52,6 @@ public class SanPham {
         this.tensp = tensp;
     }
 
-    public Double getGia() {
-        return gia;
-    }
-
-    public void setGia(Double gia) {
-        this.gia = gia;
-    }
-
     public String getGhichu() {
         return ghichu;
     }
@@ -85,14 +66,6 @@ public class SanPham {
 
     public void setLoai(DanhMuc loai) {
         this.loai = loai;
-    }
-
-    public Double getOriginalPrice() {
-        return originalPrice;
-    }
-
-    public void setOriginalPrice(Double originalPrice) {
-        this.originalPrice = originalPrice;
     }
 
     public Integer getDiscount() {

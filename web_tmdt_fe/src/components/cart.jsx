@@ -44,9 +44,7 @@ const Cart = () => {
         const response = await fetch(
           `http://localhost:8080/api/payment/vnpay-return?${location.search}`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
         const data = await response.json();
@@ -54,16 +52,13 @@ const Cart = () => {
         if (data.status === "success") {
           message.success("🎉 Thanh toán thành công!");
           await fetchCartItems();
-        } else if (data.status === "fail") {
+        } else {
           message.error("❌ Thanh toán thất bại!");
         }
-      } catch (err) {
+      } catch {
         message.error("Lỗi khi xác minh giao dịch VNPay.");
       } finally {
-        // Xóa query string sau 2 giây
-        setTimeout(() => {
-          window.history.replaceState(null, "", "/cart");
-        }, 2000);
+        setTimeout(() => window.history.replaceState(null, "", "/cart"), 2000);
       }
     };
 
@@ -73,33 +68,30 @@ const Cart = () => {
   const fetchCartItems = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8080/api/cart", {
+      const res = await fetch("http://localhost:8080/api/cart", {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Không thể lấy giỏ hàng (Status: ${response.status}) - ${errorText}`
-        );
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Không thể lấy giỏ hàng (${res.status}) - ${text}`);
       }
 
-      const data = await response.json();
+      const data = await res.json();
       const mappedProducts = Array.isArray(data.cartItems)
         ? data.cartItems.map((item) => ({
             id: item.id,
             name: item.tensp || "",
-            variantName: `${item.color || ""} - ${item.storage || ""}`,
             price: item.gia || 0,
             soluong: item.soluong || 1,
+            variantName: item.variantName || "",
             images: item.image
               ? [`http://localhost:8080/images/products/${item.image}`]
               : ["https://placehold.co/150x150?text=Image"],
             selected: item.selected !== false,
-            variantName: item.variantName || "", // nếu bạn cần dùng riêng tên biến thể
           }))
         : [];
 
@@ -113,37 +105,15 @@ const Cart = () => {
     }
   };
 
-  const calculateTotal = () => {
-    const total = products
-      .filter((product) => product.selected)
-      .reduce(
-        (sum, product) => sum + (product.price * product.soluong || 0),
-        0
-      );
-    setTotalPrice(total);
-  };
-
-  const checkAllSelected = () => {
-    setAllSelected(products.every((product) => product.selected));
-  };
-
   const handleSoluongChange = async (id, value) => {
-    if (value === null || value < 1) return;
+    if (!value || value < 1) return;
     try {
       await fetch(
         `http://localhost:8080/api/cart/update?cartItemId=${id}&soluong=${value}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
       );
-
-      setProducts((prevProducts) =>
-        prevProducts.map((product) =>
-          product.id === id ? { ...product, soluong: value } : product
-        )
+      setProducts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, soluong: value } : p))
       );
     } catch (error) {
       message.error("Lỗi khi cập nhật số lượng: " + error.message);
@@ -155,20 +125,10 @@ const Cart = () => {
     try {
       await fetch(
         `http://localhost:8080/api/cart/update?cartItemId=${id}&selected=${!product.selected}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
       );
-
-      setProducts((prevProducts) =>
-        prevProducts.map((product) =>
-          product.id === id
-            ? { ...product, selected: !product.selected }
-            : product
-        )
+      setProducts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, selected: !p.selected } : p))
       );
     } catch (error) {
       message.error("Lỗi khi chọn sản phẩm: " + error.message);
@@ -176,26 +136,18 @@ const Cart = () => {
   };
 
   const handleSelectAll = async (e) => {
-    const { checked } = e.target;
+    const checked = e.target.checked;
     setAllSelected(checked);
     try {
       await Promise.all(
-        products.map((product) =>
+        products.map((p) =>
           fetch(
-            `http://localhost:8080/api/cart/update?cartItemId=${product.id}&selected=${checked}`,
-            {
-              method: "PUT",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
+            `http://localhost:8080/api/cart/update?cartItemId=${p.id}&selected=${checked}`,
+            { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
           )
         )
       );
-
-      setProducts((prevProducts) =>
-        prevProducts.map((product) => ({ ...product, selected: checked }))
-      );
+      setProducts((prev) => prev.map((p) => ({ ...p, selected: checked })));
     } catch (error) {
       message.error("Lỗi khi chọn tất cả: " + error.message);
     }
@@ -205,40 +157,34 @@ const Cart = () => {
     try {
       await fetch(`http://localhost:8080/api/cart/remove?cartItemId=${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      const updatedProducts = products.filter((product) => product.id !== id);
-      setProducts(updatedProducts);
-      localStorage.setItem("cartCount", updatedProducts.length);
+      const updated = products.filter((p) => p.id !== id);
+      setProducts(updated);
+      localStorage.setItem("cartCount", updated.length);
       window.dispatchEvent(new Event("cart-updated"));
     } catch (error) {
       message.error("Lỗi khi xóa sản phẩm: " + error.message);
     }
   };
 
-  const handleCheckout = async () => {
-    const selectedProducts = products.filter((product) => product.selected);
-
-    if (selectedProducts.length === 0) {
+  const handleCheckout = () => {
+    const selected = products.filter((p) => p.selected);
+    if (selected.length === 0) {
       message.warning("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
       return;
     }
 
-    const checkoutProducts = selectedProducts.map((p) => ({
-      ...p,
-      image: p.images?.[0] || "", // ✅ Truyền ảnh đầu tiên
-      color: p.variantName?.split(" - ")[1] || "", // ✅ Tách color
-      storage: p.variantName?.split(" - ")[2] || "", // ✅ Tách storage
-      phanloai:
-        p.variantName?.split(" - ")[1] && p.variantName?.split(" - ")[2]
-          ? `${p.variantName?.split(" - ")[1]} - ${
-              p.variantName?.split(" - ")[2]
-            }`
-          : "", // ✅ Tạo phân loại hiển thị
-    }));
+    const checkoutProducts = selected.map((p) => {
+      const [color = "", storage = ""] = p.variantName?.split(" - ") || [];
+      return {
+        ...p,
+        image: p.images?.[0] || "",
+        color,
+        storage,
+        phanloai: color && storage ? `${color} - ${storage}` : "",
+      };
+    });
 
     sessionStorage.setItem(
       "checkoutProducts",
@@ -247,23 +193,22 @@ const Cart = () => {
     sessionStorage.setItem("checkoutPaymentMethod", paymentMethod);
 
     navigate("/thanhtoan", {
-      state: {
-        products: checkoutProducts,
-        paymentMethod: paymentMethod,
-      },
+      state: { products: checkoutProducts, paymentMethod },
     });
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("vi-VN", {
+  const formatCurrency = (amount) =>
+    new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
     }).format(amount);
-  };
 
   useEffect(() => {
-    calculateTotal();
-    checkAllSelected();
+    const total = products
+      .filter((p) => p.selected)
+      .reduce((sum, p) => sum + p.price * p.soluong, 0);
+    setTotalPrice(total);
+    setAllSelected(products.length > 0 && products.every((p) => p.selected));
   }, [products]);
 
   if (loading)
@@ -341,7 +286,6 @@ const Cart = () => {
                             <p className="text-sm text-gray-500">
                               {product.variantName}
                             </p>
-
                             <p className="mt-1 text-lg font-semibold text-blue-600">
                               {formatCurrency(product.price)}
                             </p>
@@ -382,15 +326,13 @@ const Cart = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Phí vận chuyển:</span>
-                    <span>
-                      {totalPrice > 0 ? formatCurrency(0) : formatCurrency(0)}
-                    </span>
+                    <span>{formatCurrency(0)}</span>
                   </div>
                   <div className="border-t pt-4 mt-4">
                     <div className="flex justify-between font-semibold text-lg">
                       <span>Tổng cộng:</span>
                       <span className="text-blue-600">
-                        {formatCurrency(totalPrice > 0 ? totalPrice + 0 : 0)}
+                        {formatCurrency(totalPrice)}
                       </span>
                     </div>
                   </div>

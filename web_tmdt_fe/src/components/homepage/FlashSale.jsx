@@ -38,16 +38,27 @@ const FlashSale = () => {
             : `http://localhost:8080/images/products/${product.imageUrl}`;
 
           const discount =
-            product.originalPrice && product.gia && product.originalPrice > product.gia
-              ? Math.round(((product.originalPrice - product.gia) / product.originalPrice) * 100)
+            product.originalPrice &&
+            product.gia &&
+            product.originalPrice > product.gia
+              ? Math.round(
+                  ((product.originalPrice - product.gia) /
+                    product.originalPrice) *
+                    100
+                )
               : 0;
 
           return {
             ...product,
-            imageUrl: imageUrl || `https://via.placeholder.com/200?text=${product.tensp || "Flash Sale"}`,
+            imageUrl:
+              imageUrl ||
+              `https://via.placeholder.com/200?text=${
+                product.tensp || "Flash Sale"
+              }`,
             discount,
             rating: typeof product.rating === "number" ? product.rating : 0,
-            reviewCount: typeof product.reviewCount === "number" ? product.reviewCount : 0,
+            reviewCount:
+              typeof product.reviewCount === "number" ? product.reviewCount : 0,
           };
         });
         setProducts(formatted);
@@ -111,7 +122,9 @@ const FlashSale = () => {
   return (
     <div className="mb-12">
       <div className="flex items-center justify-between mb-6">
-        <Title level={2} className="mb-0">Flash Sale</Title>
+        <Title level={2} className="mb-0">
+          Flash Sale
+        </Title>
         <div className="flex items-center space-x-2">
           {["hours", "minutes", "seconds"].map((unit, idx) => (
             <React.Fragment key={unit}>
@@ -139,7 +152,8 @@ const FlashSale = () => {
                         src={product.imageUrl}
                         className="h-[200px] object-contain mx-auto"
                         onError={(e) =>
-                          (e.target.src = "https://via.placeholder.com/200?text=Error")
+                          (e.target.src =
+                            "https://via.placeholder.com/200?text=Error")
                         }
                       />
                     </Badge.Ribbon>
@@ -149,7 +163,8 @@ const FlashSale = () => {
                       src={product.imageUrl}
                       className="h-[200px] object-contain mx-auto"
                       onError={(e) =>
-                        (e.target.src = "https://via.placeholder.com/200?text=Error")
+                        (e.target.src =
+                          "https://via.placeholder.com/200?text=Error")
                       }
                     />
                   )}

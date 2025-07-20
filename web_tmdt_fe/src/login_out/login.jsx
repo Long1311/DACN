@@ -75,16 +75,15 @@ const Login = () => {
       setUser(userResponse);
       message.success("Đăng nhập thành công!");
       if (
-  (userResponse.roles &&
-    Array.isArray(userResponse.roles) &&
-    userResponse.roles.includes("ROLE_ADMIN")) ||
-  userResponse.quyentruycap === "admin"
-) {
-  navigate("/admin");
-} else {
-  navigate("/");
-}
-
+        (userResponse.roles &&
+          Array.isArray(userResponse.roles) &&
+          userResponse.roles.includes("ROLE_ADMIN")) ||
+        userResponse.quyentruycap === "admin"
+      ) {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     } catch (error) {
       message.error("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!");
     } finally {
@@ -100,7 +99,7 @@ const Login = () => {
       cancelText: "Hủy",
       onOk: () => {
         localStorage.removeItem("token");
-        localStorage.removeItem("user"); // ⬅ xóa thêm user
+        localStorage.removeItem("user");
         setUser(null);
         message.success("Đăng xuất thành công!");
       },

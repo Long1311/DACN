@@ -5,23 +5,21 @@ import jakarta.persistence.Embeddable;
 
 @Embeddable
 public class Specs {
-    private String screen; // Màn hình
-    private String cpu; // Chip xử lý
-    private String ram; // RAM
-    private String storageRange; // Phạm vi bộ nhớ
-    private String camera; // Camera sau
-    private String frontCamera; // Camera trước
-    private String battery; // Pin
+    private String screen;
+    private String cpu;
+    private String ram;
+    private String camera;
+    private String frontCamera;
+    private String battery;
     private String os;
 
     public Specs() {
     }
 
-    public Specs(String screen, String cpu, String ram, String storageRange, String camera, String frontCamera, String battery, String os) {
+    public Specs(String screen, String cpu, String ram, String camera, String frontCamera, String battery, String os) {
         this.screen = screen;
         this.cpu = cpu;
         this.ram = ram;
-        this.storageRange = storageRange;
         this.camera = camera;
         this.frontCamera = frontCamera;
         this.battery = battery;
@@ -50,14 +48,6 @@ public class Specs {
 
     public void setRam(String ram) {
         this.ram = ram;
-    }
-
-    public String getStorageRange() {
-        return storageRange;
-    }
-
-    public void setStorageRange(String storageRange) {
-        this.storageRange = storageRange;
     }
 
     public String getCamera() {

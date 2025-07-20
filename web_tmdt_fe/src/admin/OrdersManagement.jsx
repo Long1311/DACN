@@ -1,138 +1,205 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import {
-  Button,
-  Card,
-  Space,
-  Table,
-  Tabs,
-  Typography,
-  Input,
-  DatePicker,
-} from 'antd';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { Button, Card, Table, Tabs, Typography, Input, DatePicker } from "antd";
 import {
   SearchOutlined,
-  FilterOutlined,
-  DownloadOutlined,
-  EditOutlined,
-  DeleteOutlined,
-} from '@ant-design/icons';
+  SyncOutlined,
+  CloseCircleOutlined,
+} from "@ant-design/icons";
 
-const { TabPane } = Tabs;
 const { Title } = Typography;
 const { Search } = Input;
 const { RangePicker } = DatePicker;
 
 const OrdersManagement = () => {
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [searchText, setSearchText] = useState("");
+  const [dateRange, setDateRange] = useState([]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     axios
-      .get('http://localhost:8080/api/orders/all', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      .get("http://localhost:8080/api/orders/all", {
+        headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
-        const formatted = response.data.map((order) => ({
-          key: order.id,
-          id: 'DH' + String(order.id).padStart(3, '0'),
-          customer: `User ${order.userId}`,
-          date: 'Chưa có ngày',
-          total: `${order.thanhtien.toLocaleString('vi-VN')}₫`,
-          status: convertStatus(order.trangthai),
-        }));
+        const formatted = response.data.map((order) => {
+          const dateObj = new Date(order.ngaydat);
+          return {
+            key: order.id,
+            id: "DH" + String(order.id).padStart(3, "0"),
+            customer: `User ${order.userId}`,
+            date: dateObj.toLocaleDateString("vi-VN"),
+            rawDate: dateObj,
+            total: `${order.thanhtien.toLocaleString("vi-VN")}₫`,
+            status: convertStatus(order.trangthai),
+          };
+        });
         setOrders(formatted);
+        setFilteredOrders(formatted);
       })
       .catch((error) => {
-        console.error('Lỗi khi lấy danh sách đơn hàng:', error);
+        console.error("Lỗi khi lấy danh sách đơn hàng:", error);
       });
   }, []);
 
+  useEffect(() => {
+    handleFilter();
+  }, [searchText, dateRange, orders]);
+
   const convertStatus = (status) => {
     switch (status) {
-      case 'PENDING':
-        return 'Chờ xác nhận';
-      case 'SHIPPING':
-        return 'Đang giao';
-      case 'COMPLETED':
-        return 'Đã giao';
-      case 'CANCELLED':
-        return 'Đã hủy';
+      case "PENDING":
+        return "Chờ xác nhận";
+      case "SHIPPING":
+        return "Đang giao";
+      case "COMPLETED":
+        return "Đã giao";
+      case "CANCELLED":
+        return "Đã hủy";
       default:
         return status;
     }
   };
 
+  const handleFilter = () => {
+    let filtered = [...orders];
+
+    if (searchText.trim() !== "") {
+      const lowerSearch = searchText.toLowerCase();
+      filtered = filtered.filter(
+        (order) =>
+          order.id.toLowerCase().includes(lowerSearch) ||
+          order.customer.toLowerCase().includes(lowerSearch)
+      );
+    }
+
+    if (dateRange.length === 2) {
+      const [start, end] = dateRange;
+      filtered = filtered.filter((order) => {
+        const date = order.rawDate;
+        return (
+          date >= start.startOf("day").toDate() &&
+          date <= end.endOf("day").toDate()
+        );
+      });
+    }
+
+    setFilteredOrders(filtered);
+  };
 
   const orderColumns = [
     {
-      title: 'Mã đơn',
-      dataIndex: 'id',
-      key: 'id',
+      title: "Mã đơn",
+      dataIndex: "id",
+      key: "id",
     },
     {
-      title: 'Khách hàng',
-      dataIndex: 'customer',
-      key: 'customer',
+      title: "Khách hàng",
+      dataIndex: "customer",
+      key: "customer",
     },
     {
-      title: 'Ngày đặt',
-      dataIndex: 'date',
-      key: 'date',
+      title: "Ngày đặt",
+      dataIndex: "date",
+      key: "date",
     },
     {
-      title: 'Tổng tiền',
-      dataIndex: 'total',
-      key: 'total',
+      title: "Tổng tiền",
+      dataIndex: "total",
+      key: "total",
     },
     {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
       render: (status) => {
-        let color = '';
-        switch (status) {
-          case 'Đã giao':
-            color = '#10B981';
-            break;
-          case 'Đang giao':
-            color = '#0EA5E9';
-            break;
-          case 'Chờ xác nhận':
-            color = '#F59E0B';
-            break;
-          case 'Đã hủy':
-            color = '#EF4444';
-            break;
-          default:
-            color = '#000';
-        }
-        return <span style={{ color }}>{status}</span>;
+        const colorMap = {
+          "Đã giao": "#10B981",
+          "Đang giao": "#0EA5E9",
+          "Chờ xác nhận": "#F59E0B",
+          "Đã hủy": "#EF4444",
+        };
+        return (
+          <span style={{ color: colorMap[status] || "#000" }}>{status}</span>
+        );
       },
     },
-  
     {
-      title: 'Thao tác',
-      key: 'action',
-      render: () => (
-        <Space size="middle">
+      title: "Thao tác",
+      key: "action",
+      render: (_, record) => (
+        <>
           <Button
             type="text"
-            icon={<EditOutlined />}
-            className="!rounded-button cursor-pointer whitespace-nowrap"
+            icon={<SyncOutlined />}
+            className="!rounded-button"
+            disabled={["Đã giao", "Đã hủy"].includes(record.status)}
+            onClick={() => handleUpdateStatus(record)}
           />
           <Button
             type="text"
-            icon={<DeleteOutlined />}
+            icon={<CloseCircleOutlined />}
             danger
-            className="!rounded-button cursor-pointer whitespace-nowrap"
+            className="!rounded-button"
+            disabled={["Đã giao", "Đã hủy"].includes(record.status)}
+            onClick={() => handleCancelOrder(record)}
           />
-        </Space>
+        </>
       ),
     },
   ];
+
+  const handleUpdateStatus = (record) => {
+    const nextStatus = {
+      "Chờ xác nhận": "SHIPPING",
+      "Đang giao": "COMPLETED",
+    }[record.status];
+    if (!nextStatus) return;
+
+    const token = localStorage.getItem("token");
+    axios
+      .put(
+        `http://localhost:8080/api/orders/${record.key}/status`,
+        { status: nextStatus },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      .then(() => {
+        setOrders((prev) =>
+          prev.map((order) =>
+            order.key === record.key
+              ? { ...order, status: convertStatus(nextStatus) }
+              : order
+          )
+        );
+      })
+      .catch((error) => console.error("Lỗi cập nhật trạng thái:", error));
+  };
+
+  const handleCancelOrder = (record) => {
+    const token = localStorage.getItem("token");
+    axios
+      .put(
+        `http://localhost:8080/api/orders/${record.key}/status`,
+        { status: "CANCELLED" },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      .then(() => {
+        setOrders((prev) =>
+          prev.map((order) =>
+            order.key === record.key
+              ? { ...order, status: convertStatus("CANCELLED") }
+              : order
+          )
+        );
+      })
+      .catch((error) => console.error("Lỗi khi hủy đơn hàng:", error));
+  };
 
   return (
     <div className="p-6">
@@ -140,75 +207,40 @@ const OrdersManagement = () => {
         <Title level={4} className="m-0">
           Quản lý đơn hàng
         </Title>
-        <Space>
-          <Button
-            icon={<DownloadOutlined />}
-            className="!rounded-button cursor-pointer whitespace-nowrap"
-          >
-            Xuất Excel
-          </Button>
-        </Space>
       </div>
       <Card className="shadow-sm">
         <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-          <Search
-            placeholder="Tìm kiếm đơn hàng..."
+          <Input
+            placeholder="Tìm kiếm mã đơn hoặc khách hàng..."
             allowClear
-            enterButton={<SearchOutlined />}
+            prefix={<SearchOutlined />}
             style={{ width: 300 }}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
             className="!rounded-button"
           />
-          <Space>
-            <Button
-              icon={<FilterOutlined />}
-              className="!rounded-button cursor-pointer whitespace-nowrap"
-            >
-              Lọc
-            </Button>
-            <RangePicker className="!rounded-button" />
-          </Space>
+          <RangePicker
+            className="!rounded-button"
+            onChange={(dates) => setDateRange(dates || [])}
+          />
         </div>
+
         <Tabs defaultActiveKey="all">
-          <TabPane tab="Tất cả" key="all">
-            <Table
-              dataSource={orders}
-              columns={orderColumns}
-              pagination={{ pageSize: 10 }}
-              className="overflow-x-auto"
-            />
-          </TabPane>
-          <TabPane tab="Chờ xác nhận" key="pending">
-            <Table
-              dataSource={orders.filter((order) => order.status === 'Chờ xác nhận')}
-              columns={orderColumns}
-              pagination={{ pageSize: 10 }}
-              className="overflow-x-auto"
-            />
-          </TabPane>
-          <TabPane tab="Đang giao" key="shipping">
-            <Table
-              dataSource={orders.filter((order) => order.status === 'Đang giao')}
-              columns={orderColumns}
-              pagination={{ pageSize: 10 }}
-              className="overflow-x-auto"
-            />
-          </TabPane>
-          <TabPane tab="Đã giao" key="delivered">
-            <Table
-              dataSource={orders.filter((order) => order.status === 'Đã giao')}
-              columns={orderColumns}
-              pagination={{ pageSize: 10 }}
-              className="overflow-x-auto"
-            />
-          </TabPane>
-          <TabPane tab="Đã hủy" key="cancelled">
-            <Table
-              dataSource={orders.filter((order) => order.status === 'Đã hủy')}
-              columns={orderColumns}
-              pagination={{ pageSize: 10 }}
-              className="overflow-x-auto"
-            />
-          </TabPane>
+          {["Tất cả", "Chờ xác nhận", "Đang giao", "Đã giao", "Đã hủy"].map(
+            (tab) => (
+              <Tabs.TabPane key={tab} tab={tab}>
+                <Table
+                  dataSource={
+                    tab === "Tất cả"
+                      ? filteredOrders
+                      : filteredOrders.filter((o) => o.status === tab)
+                  }
+                  columns={orderColumns}
+                  pagination={{ pageSize: 10 }}
+                />
+              </Tabs.TabPane>
+            )
+          )}
         </Tabs>
       </Card>
     </div>

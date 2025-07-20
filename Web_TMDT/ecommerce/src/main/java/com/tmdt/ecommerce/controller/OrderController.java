@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 @RestController
@@ -78,5 +79,23 @@ public class OrderController {
     public ResponseEntity<List<Integer>> countOrdersByMonth() {
         return ResponseEntity.ok(orderService.countOrdersByMonth());
     }
+
+    @PutMapping("/{orderId}/status")
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Long orderId, @RequestBody Map<String, String> requestBody) {
+        String newStatus = requestBody.get("status");
+        if (newStatus == null || newStatus.isEmpty()) {
+            return ResponseEntity.badRequest().body("Trạng thái mới không được để trống");
+        }
+
+        try {
+            orderService.updateOrderStatus(orderId, newStatus);
+            return ResponseEntity.ok("Cập nhật trạng thái đơn hàng thành công");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi khi cập nhật trạng thái đơn hàng");
+        }
+    }
+
 
 }

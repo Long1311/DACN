@@ -23,12 +23,11 @@ const ChangePassword = () => {
         }
       );
       message.success("Đổi mật khẩu thành công!");
-      //điều hướng về trang chủ
       setTimeout(() => {
         navigate("/");
       }, 1000);
     } catch (error) {
-      console.error(error.response?.data); // Log chi tiết
+      console.error(error.response?.data);
       message.error(error.response?.data || "Đổi mật khẩu thất bại!");
     }
   };

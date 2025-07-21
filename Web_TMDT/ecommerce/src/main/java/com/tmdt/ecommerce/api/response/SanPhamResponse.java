@@ -7,17 +7,15 @@ public class SanPhamResponse {
     private Double rating;
     private Integer reviewCount;
     private SpecsResponse specs;
-    private Integer discount;
     private Long loaiId;
 
     public SanPhamResponse() {
     }
 
-    public SanPhamResponse(Long id, String tensp, Integer discount, String ghichu,
+    public SanPhamResponse(Long id, String tensp, String ghichu,
                            Double rating, Integer reviewCount, SpecsResponse specs, Long loaiId) {
         this.id = id;
         this.tensp = tensp;
-        this.discount = discount;
         this.ghichu = ghichu;
         this.rating = rating;
         this.reviewCount = reviewCount;
@@ -80,13 +78,5 @@ public class SanPhamResponse {
 
     public void setSpecs(SpecsResponse specs) {
         this.specs = specs;
-    }
-
-    public Integer getDiscount() {
-        return discount;
-    }
-
-    public void setDiscount(Integer discount) {
-        this.discount = discount;
     }
 }

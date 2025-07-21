@@ -13,6 +13,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,18 +51,31 @@ public class SanPhamVariantService{
     }
 
     public List<SanPhamVariant> getDiscountedVariants() {
-        return variantRepository.findAll().stream()
-                .filter(v -> {
-                    Double gia = v.getGia();
-                    Double original = v.getOriginalPrice();
-                    return gia != null && original != null && gia < original;
-                })
-                .toList();
+        Pageable top8 = PageRequest.of(0, 8);
+        return variantRepository.findTopDiscountedVariants(top8);
     }
 
 
     public List<SanPhamVariant> getFeaturedVariants() {
-        return variantRepository.findTop8ByOrderBySanPham_RatingDesc();
+        LocalDateTime start = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        LocalDateTime end = LocalDateTime.now();
+
+        Pageable top5 = PageRequest.of(0, 5);
+        List<SanPhamVariant> bestSellers = variantRepository.findTopSellingProducts(
+                        java.sql.Timestamp.valueOf(start),
+                        java.sql.Timestamp.valueOf(end),
+                        top5
+                ).stream()
+                .map(response -> variantRepository.findById(response.getVariantId()).orElse(null))
+                .filter(v -> v != null)
+                .toList();
+
+        List<SanPhamVariant> newest = variantRepository.findTop3ByOrderByCreatedAtDesc();
+
+        List<SanPhamVariant> combined = new ArrayList<>(bestSellers);
+        combined.addAll(newest);
+
+        return combined;
     }
 
     public Optional<SanPhamVariant> getVariantById(Long id) {
@@ -97,10 +113,8 @@ public class SanPhamVariantService{
     }
 
     public void addProduct(AddProductRequest request) {
-        // Kiểm tra xem tensp đã tồn tại trong bảng sanpham chưa
         SanPham sanPham = sanPhamRepository.findByTensp(request.getTensp())
                 .orElseGet(() -> {
-                    // Nếu không tồn tại, tạo mới SanPham
                     SanPham newSanPham = new SanPham();
                     newSanPham.setTensp(request.getTensp());
                     newSanPham.setRating(0.0);
@@ -111,17 +125,6 @@ public class SanPhamVariantService{
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục với ID: " + request.getDanhMucId()));
                         newSanPham.setLoai(danhMuc);
                     }
-
-                    // Tính toán discount
-                    Integer discount = 0;
-                    if (request.getOriginalPrice() != null
-                            && request.getGia() != null
-                            && request.getGia() > 0
-                            && request.getOriginalPrice() > request.getGia()) {
-                        double discountPercentage = ((request.getOriginalPrice() - request.getGia()) / request.getOriginalPrice()) * 100;
-                        discount = (int) Math.round(discountPercentage);
-                    }
-                    newSanPham.setDiscount(discount);
 
                     return sanPhamRepository.save(newSanPham);
                 });
@@ -148,8 +151,15 @@ public class SanPhamVariantService{
             variant.setImageUrl(request.getImageUrl());
             variant.setDisabled(false);
 
+            // Tính discount riêng cho từng biến thể
+            Integer discount = 0;
+            if (variant.getOriginalPrice() > giaToLuu) {
+                double discountPercentage = ((variant.getOriginalPrice() - giaToLuu) / variant.getOriginalPrice()) * 100;
+                discount = (int) Math.round(discountPercentage);
+            }
+            variant.setDiscount(discount);
+
             variantRepository.save(variant);
         }
     }
-
 }

@@ -20,48 +20,52 @@ import {
 import axios from "axios";
 
 const { Title } = Typography;
-const { Search } = Input;
 
 const CategoriesManagement = () => {
-  const [categories, setCategories] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
+  const [filteredCategories, setFilteredCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [editingCategory, setEditingCategory] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
 
-  const fetchCategories = async (keyword = "") => {
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:8080/api/danhmuc`, {
-        params: keyword ? { keyword } : {},
-      });
+      const response = await axios.get(`http://localhost:8080/api/danhmuc`);
       const data = response.data.map((item) => ({
         key: item.id,
         id: item.id,
         name: item.tendm,
       }));
-      setCategories(data);
+      setAllCategories(data);
+      setFilteredCategories(data);
     } catch (error) {
       message.error("Lỗi khi tải danh mục");
     }
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const handleSearch = (value) => {
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
     setSearchKeyword(value);
-    fetchCategories(value);
+
+    const filtered = allCategories.filter((item) =>
+      item.name.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredCategories(filtered);
   };
 
   const handleDelete = async (id) => {
     try {
       await axios.delete(`http://localhost:8080/api/danhmuc/${id}`);
       message.success("Xoá danh mục thành công");
-      fetchCategories(searchKeyword);
+      fetchCategories();
     } catch (error) {
       message.error("Lỗi khi xoá danh mục");
     }
@@ -96,7 +100,7 @@ const CategoriesManagement = () => {
         message.success("Thêm danh mục thành công");
       }
       setModalVisible(false);
-      fetchCategories(searchKeyword);
+      fetchCategories();
     } catch (error) {
       message.error("Lỗi khi thêm/cập nhật danh mục");
     }
@@ -108,7 +112,6 @@ const CategoriesManagement = () => {
       key: "index",
       render: (_, __, index) => index + 1,
     },
-
     {
       title: "Tên danh mục",
       dataIndex: "name",
@@ -155,17 +158,18 @@ const CategoriesManagement = () => {
 
       <Card className="shadow-sm">
         <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-          <Search
+          <Input
             placeholder="Tìm kiếm danh mục..."
             allowClear
-            enterButton={<SearchOutlined />}
-            onSearch={handleSearch}
+            prefix={<SearchOutlined />}
+            value={searchKeyword}
+            onChange={handleSearchInputChange}
             style={{ width: 300 }}
           />
         </div>
 
         <Table
-          dataSource={categories}
+          dataSource={filteredCategories}
           columns={columns}
           loading={loading}
           pagination={{ pageSize: 10 }}

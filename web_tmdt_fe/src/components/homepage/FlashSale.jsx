@@ -32,21 +32,11 @@ const FlashSale = () => {
       .get("http://localhost:8080/api/variants/discount")
       .then((response) => {
         const data = Array.isArray(response.data) ? response.data : [];
+
         const formatted = data.map((product) => {
           const imageUrl = product.imageUrl?.startsWith("http")
             ? product.imageUrl
             : `http://localhost:8080/images/products/${product.imageUrl}`;
-
-          const discount =
-            product.originalPrice &&
-            product.gia &&
-            product.originalPrice > product.gia
-              ? Math.round(
-                  ((product.originalPrice - product.gia) /
-                    product.originalPrice) *
-                    100
-                )
-              : 0;
 
           return {
             ...product,
@@ -55,12 +45,14 @@ const FlashSale = () => {
               `https://via.placeholder.com/200?text=${
                 product.tensp || "Flash Sale"
               }`,
-            discount,
+            discount:
+              typeof product.discount === "number" ? product.discount : 0,
             rating: typeof product.rating === "number" ? product.rating : 0,
             reviewCount:
               typeof product.reviewCount === "number" ? product.reviewCount : 0,
           };
         });
+
         setProducts(formatted);
       })
       .catch((error) => {
@@ -69,6 +61,7 @@ const FlashSale = () => {
       })
       .finally(() => setLoading(false));
 
+    // Countdown timer setup
     const now = new Date();
     const endTime = new Date();
     endTime.setHours(23, 59, 59, 999);
@@ -139,7 +132,7 @@ const FlashSale = () => {
         </div>
       </div>
       <Row gutter={[24, 24]}>
-        {products.slice(0, 4).map((product) => (
+        {products.slice(0, 8).map((product) => (
           <Col xs={12} sm={12} md={6} key={product.id}>
             <Card
               hoverable
@@ -182,14 +175,13 @@ const FlashSale = () => {
                       ? product.gia.toLocaleString("vi-VN") + " ₫"
                       : "Giá không xác định"}
                   </Text>
-                  {product.discount > 0 && (
+                  {product.discount > 0 && product.originalPrice && (
                     <Text className="text-gray-400 line-through text-sm ml-2">
-                      {product.originalPrice?.toLocaleString("vi-VN") + " ₫"}
+                      {product.originalPrice.toLocaleString("vi-VN") + " ₫"}
                     </Text>
                   )}
                 </div>
 
-                {/* Đánh giá sao */}
                 <div className="flex items-center mb-2">
                   <Rate
                     disabled

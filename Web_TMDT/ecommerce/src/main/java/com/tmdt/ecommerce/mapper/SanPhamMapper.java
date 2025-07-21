@@ -13,7 +13,6 @@ public class SanPhamMapper {
         if (response != null) {
             sanPham.setId(response.getId());
             sanPham.setTensp(response.getTensp());
-            sanPham.setDiscount(response.getDiscount());
             sanPham.setGhichu(response.getGhichu());
             sanPham.setRating(response.getRating());
             sanPham.setReviewCount(response.getReviewCount());
@@ -55,7 +54,6 @@ public class SanPhamMapper {
         return new SanPhamResponse(
                 sanPham.getId(),
                 sanPham.getTensp(),
-                sanPham.getDiscount(),
                 sanPham.getGhichu(),
                 sanPham.getRating(),
                 sanPham.getReviewCount(),

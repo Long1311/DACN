@@ -44,32 +44,14 @@ const DiscountPage = () => {
       );
       const data = Array.isArray(res.data) ? res.data : [];
 
-      const formatted = data.map((product) => {
-        let discount = product.discount;
-
-        if (!discount && product.originalPrice && product.gia) {
-          discount = Math.round(
-            ((product.originalPrice - product.gia) / product.originalPrice) *
-              100
-          );
-        }
-
-        const originalPrice =
-          product.gia && discount
-            ? Math.round(product.gia / (1 - discount / 100))
-            : null;
-
-        return {
-          ...product,
-          discount,
-          originalPrice,
-          imageUrl: product.imageUrl
-            ? product.imageUrl.startsWith("http")
-              ? product.imageUrl
-              : `http://localhost:8080/images/products/${product.imageUrl}`
-            : "https://via.placeholder.com/200?text=No+Image",
-        };
-      });
+      const formatted = data.map((product) => ({
+        ...product,
+        imageUrl: product.imageUrl
+          ? product.imageUrl.startsWith("http")
+            ? product.imageUrl
+            : `http://localhost:8080/images/products/${product.imageUrl}`
+          : "https://via.placeholder.com/200?text=No+Image",
+      }));
 
       setProducts(formatted);
     } catch (error) {
@@ -144,13 +126,15 @@ const DiscountPage = () => {
                     <div className="flex items-center mb-2">
                       <Rate
                         disabled
-                        defaultValue={product.rating || 4.5}
+                        value={product.rating || 0}
+                        allowHalf
                         className="text-yellow-400 text-sm"
                       />
                       <Text className="text-gray-500 text-xs ml-2">
-                        ({product.reviewCount || 120})
+                        ({product.review_count || 0})
                       </Text>
                     </div>
+
                     <Text strong className="block mb-1">
                       Màu: {product.color || "Không xác định"}
                     </Text>

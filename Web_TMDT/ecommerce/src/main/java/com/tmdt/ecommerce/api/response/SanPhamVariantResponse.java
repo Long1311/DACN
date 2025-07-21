@@ -1,31 +1,37 @@
 package com.tmdt.ecommerce.api.response;
 
+import java.util.Date;
+
 public class SanPhamVariantResponse {
     private Long id;
     private String color;
     private String storage;
     private Double gia;
     private Integer soluong;
+    private Integer discount;
     private String imageUrl;
     private Long sanPhamId;
     private String tensp;
     private Double originalPrice;
     private boolean disabled;
+    private Date createdAt;
 
     public SanPhamVariantResponse() {
     }
 
-    public SanPhamVariantResponse(Long id, String color, String storage, Double gia, Integer soluong, String imageUrl, Long sanPhamId, String tensp, Double originalPrice, boolean disabled) {
+    public SanPhamVariantResponse(Long id, String color, String storage, Double gia, Integer soluong, Integer discount, String imageUrl, Long sanPhamId, String tensp, Double originalPrice, boolean disabled, Date createdAt) {
         this.id = id;
         this.color = color;
         this.storage = storage;
         this.gia = gia;
         this.soluong = soluong;
+        this.discount = discount;
         this.imageUrl = imageUrl;
         this.sanPhamId = sanPhamId;
         this.tensp = tensp;
         this.originalPrice = originalPrice;
         this.disabled = disabled;
+        this.createdAt = createdAt;
     }
 
     public Long getId() {
@@ -68,6 +74,14 @@ public class SanPhamVariantResponse {
         this.soluong = soluong;
     }
 
+    public Integer getDiscount() {
+        return discount;
+    }
+
+    public void setDiscount(Integer discount) {
+        this.discount = discount;
+    }
+
     public String getImageUrl() {
         return imageUrl;
     }
@@ -106,5 +120,13 @@ public class SanPhamVariantResponse {
 
     public void setDisabled(boolean disabled) {
         this.disabled = disabled;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
 }

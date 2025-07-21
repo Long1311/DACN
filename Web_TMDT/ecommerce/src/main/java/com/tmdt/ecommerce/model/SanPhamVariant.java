@@ -1,6 +1,9 @@
 package com.tmdt.ecommerce.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.util.Date;
 
 @Entity
 @Table(name = "sanpham_variant")
@@ -13,6 +16,7 @@ public class SanPhamVariant {
     private String storage;
     private Double gia;
     private Integer soluong;
+    private Integer discount;
 
     @Column(nullable = false)
     private boolean disabled = false;
@@ -21,6 +25,11 @@ public class SanPhamVariant {
     private String imageUrl;
 
     private Double originalPrice;
+
+    @CreationTimestamp
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(updatable = false)
+    private Date createdAt;
 
     @ManyToOne
     @JoinColumn(name = "sanpham_id")
@@ -66,6 +75,14 @@ public class SanPhamVariant {
         this.soluong = soluong;
     }
 
+    public Integer getDiscount() {
+        return discount;
+    }
+
+    public void setDiscount(Integer discount) {
+        this.discount = discount;
+    }
+
     public boolean isDisabled() {
         return disabled;
     }
@@ -88,6 +105,14 @@ public class SanPhamVariant {
 
     public void setOriginalPrice(Double originalPrice) {
         this.originalPrice = originalPrice;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
 
     public SanPham getSanPham() {

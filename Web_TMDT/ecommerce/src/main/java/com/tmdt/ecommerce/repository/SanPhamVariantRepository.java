@@ -17,8 +17,6 @@ public interface SanPhamVariantRepository extends JpaRepository<SanPhamVariant, 
 
     List<SanPhamVariant> findBySanPham_Loai_Id(Long loaiId);
 
-    List<SanPhamVariant> findTop8ByOrderBySanPham_RatingDesc();
-
     Page<SanPhamVariant> findBySanPham_TenspContainingIgnoreCase(String keyword, Pageable pageable);
 
     List<SanPhamVariant> findByColorIgnoreCase(String color);
@@ -28,6 +26,12 @@ public interface SanPhamVariantRepository extends JpaRepository<SanPhamVariant, 
     List<SanPhamVariant> findByColorIgnoreCaseAndStorageIgnoreCase(String color, String storage);
 
     List<SanPhamVariant> findTop4BySanPham_Loai_IdAndIdNot(Long loaiId, Long excludeId);
+
+    List<SanPhamVariant> findTop3ByOrderByCreatedAtDesc();
+
+    @Query("SELECT v FROM SanPhamVariant v WHERE v.discount > 0 ORDER BY v.createdAt DESC")
+    List<SanPhamVariant> findTopDiscountedVariants(Pageable pageable);
+
 
     @Query("SELECT new com.tmdt.ecommerce.api.response.LowStockProductResponse( " +
             "v.id, v.sanPham.tensp, v.soluong, 20, v.color, v.storage, v.imageUrl) " +

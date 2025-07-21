@@ -42,7 +42,6 @@ public class DataInitializer implements CommandLineRunner {
 
             // Tạo sản phẩm iPhone
             SanPham sp1 = new SanPham("iPhone 15 Pro", "Mới 100%", iphone);
-            sp1.setDiscount(12);
             sp1.setRating(0.0);
             sp1.setReviewCount(0);
             sp1.setSpecs(new Specs("OLED 6.1 inch", "A17 Pro", "6GB", "48MP", "12MP", "4380 mAh", "iOS 17"));
@@ -53,8 +52,7 @@ public class DataInitializer implements CommandLineRunner {
             createVariant(sp1, "Đen", "512GB", 10500000.0, 30, "ip15pro_den.jpg");
 
             // Tạo sản phẩm Samsung
-            SanPham sp2 = new SanPham("Samsung Galaxy S23", "Mới 100%", samsung);
-            sp2.setDiscount(10);
+            SanPham sp2 = new SanPham("Samsung Galaxy S23", "Mới 100%", samsung);;
             sp2.setRating(0.0);
             sp2.setReviewCount(0);
             sp2.setSpecs(new Specs("Dynamic AMOLED 6.1 inch", "Snapdragon 8 Gen 2", "8GB","50MP", "12MP", "3900 mAh", "Android 13"));

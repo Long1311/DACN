@@ -11,8 +11,6 @@ public class SanPham {
 
     private String tensp;
 
-    private Integer discount;
-
     private String ghichu;
 
     private Double rating;
@@ -66,14 +64,6 @@ public class SanPham {
 
     public void setLoai(DanhMuc loai) {
         this.loai = loai;
-    }
-
-    public Integer getDiscount() {
-        return discount;
-    }
-
-    public void setDiscount(Integer discount) {
-        this.discount = discount;
     }
 
     public Double getRating() {

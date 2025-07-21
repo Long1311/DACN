@@ -130,11 +130,13 @@ public class SanPhamVariantController {
                 variant.getStorage(),
                 variant.getGia(),
                 variant.getSoluong(),
+                variant.getDiscount(),
                 variant.getImageUrl(),
                 variant.getSanPham().getId(),
                 variant.getSanPham().getTensp(),
                 variant.getOriginalPrice(),
-                variant.isDisabled()
+                variant.isDisabled(),
+                variant.getCreatedAt()
         );
     }
 }

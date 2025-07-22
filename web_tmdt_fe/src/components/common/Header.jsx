@@ -9,6 +9,7 @@ import {
   List,
   Spin,
   Popover,
+  Modal,
 } from "antd";
 import {
   SearchOutlined,
@@ -16,9 +17,11 @@ import {
   ShoppingCartOutlined,
   UserOutlined,
 } from "@ant-design/icons";
+import ChangePassword from "../../login_out/ChangePassword";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import debounce from "lodash.debounce";
+import autoprefixer from "autoprefixer";
 
 const { Header } = Layout;
 
@@ -26,6 +29,7 @@ const HeaderComponent = () => {
   const [searchValue, setSearchValue] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [notificationCount, setNotificationCount] = useState(0);
   const [cartCount, setCartCount] = useState(
@@ -50,7 +54,6 @@ const HeaderComponent = () => {
     loadUser();
   }, []);
 
-  // Lắng nghe sự kiện user-updated
   useEffect(() => {
     const handleUserUpdate = () => {
       loadUser();
@@ -162,23 +165,23 @@ const HeaderComponent = () => {
 
   const userMenuItems = user
     ? [
-      { key: "1", label: `Xin chào, ${user.name}`, disabled: true },
-      {
-        key: "2",
-        label: "Đổi mật khẩu",
-        onClick: () => navigate("/ChangePassword"),
-      },
-      {
-        key: "3",
-        label: "Thông tin cá nhân",
-        onClick: () => navigate("/profile"),
-      },
-      { key: "4", label: "Đăng xuất", onClick: handleLogout },
-    ]
+        { key: "1", label: `Xin chào, ${user.name}`, disabled: true },
+        {
+          key: "2",
+          label: "Đổi mật khẩu",
+          onClick: () => setIsChangePasswordModalOpen(true),
+        },
+        {
+          key: "3",
+          label: "Thông tin cá nhân",
+          onClick: () => navigate("/profile"),
+        },
+        { key: "4", label: "Đăng xuất", onClick: handleLogout },
+      ]
     : [
-      { key: "1", label: "Đăng nhập", onClick: () => navigate("/login") },
-      { key: "2", label: "Đăng ký", onClick: () => navigate("/register") },
-    ];
+        { key: "1", label: "Đăng nhập", onClick: () => navigate("/login") },
+        { key: "2", label: "Đăng ký", onClick: () => navigate("/register") },
+      ];
 
   const notificationContent = user ? (
     <div style={{ width: 250 }}>
@@ -299,6 +302,16 @@ const HeaderComponent = () => {
           />
         </Badge>
       </div>
+      <Modal
+        open={isChangePasswordModalOpen}
+        onCancel={() => setIsChangePasswordModalOpen(false)}
+        footer={null}
+        centered
+        destroyOnClose
+        width={500}
+      >
+        <ChangePassword onClose={() => setIsChangePasswordModalOpen(false)} />
+      </Modal>
     </Header>
   );
 };

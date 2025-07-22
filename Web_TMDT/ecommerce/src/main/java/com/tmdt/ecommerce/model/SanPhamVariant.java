@@ -18,6 +18,10 @@ public class SanPhamVariant {
     private Integer soluong;
     private Integer discount;
 
+    private Double rating;
+
+    private Integer reviewCount;
+
     @Column(nullable = false)
     private boolean disabled = false;
 
@@ -81,6 +85,22 @@ public class SanPhamVariant {
 
     public void setDiscount(Integer discount) {
         this.discount = discount;
+    }
+
+    public Double getRating() {
+        return rating;
+    }
+
+    public void setRating(Double rating) {
+        this.rating = rating;
+    }
+
+    public Integer getReviewCount() {
+        return reviewCount;
+    }
+
+    public void setReviewCount(Integer reviewCount) {
+        this.reviewCount = reviewCount;
     }
 
     public boolean isDisabled() {

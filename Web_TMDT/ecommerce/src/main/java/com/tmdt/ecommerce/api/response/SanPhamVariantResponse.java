@@ -9,6 +9,8 @@ public class SanPhamVariantResponse {
     private Double gia;
     private Integer soluong;
     private Integer discount;
+    private Double rating;
+    private Integer reviewCount;
     private String imageUrl;
     private Long sanPhamId;
     private String tensp;
@@ -19,13 +21,15 @@ public class SanPhamVariantResponse {
     public SanPhamVariantResponse() {
     }
 
-    public SanPhamVariantResponse(Long id, String color, String storage, Double gia, Integer soluong, Integer discount, String imageUrl, Long sanPhamId, String tensp, Double originalPrice, boolean disabled, Date createdAt) {
+    public SanPhamVariantResponse(Long id, String color, String storage, Double gia, Integer soluong, Integer discount, Double rating, Integer reviewCount, String imageUrl, Long sanPhamId, String tensp, Double originalPrice, boolean disabled, Date createdAt) {
         this.id = id;
         this.color = color;
         this.storage = storage;
         this.gia = gia;
         this.soluong = soluong;
         this.discount = discount;
+        this.rating = rating;
+        this.reviewCount = reviewCount;
         this.imageUrl = imageUrl;
         this.sanPhamId = sanPhamId;
         this.tensp = tensp;
@@ -80,6 +84,22 @@ public class SanPhamVariantResponse {
 
     public void setDiscount(Integer discount) {
         this.discount = discount;
+    }
+
+    public Double getRating() {
+        return rating;
+    }
+
+    public void setRating(Double rating) {
+        this.rating = rating;
+    }
+
+    public Integer getReviewCount() {
+        return reviewCount;
+    }
+
+    public void setReviewCount(Integer reviewCount) {
+        this.reviewCount = reviewCount;
     }
 
     public String getImageUrl() {

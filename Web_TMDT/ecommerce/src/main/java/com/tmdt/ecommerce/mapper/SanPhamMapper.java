@@ -13,9 +13,6 @@ public class SanPhamMapper {
         if (response != null) {
             sanPham.setId(response.getId());
             sanPham.setTensp(response.getTensp());
-            sanPham.setGhichu(response.getGhichu());
-            sanPham.setRating(response.getRating());
-            sanPham.setReviewCount(response.getReviewCount());
 
             if (response.getLoaiId() != null) {
                 DanhMuc loai = new DanhMuc();
@@ -54,9 +51,6 @@ public class SanPhamMapper {
         return new SanPhamResponse(
                 sanPham.getId(),
                 sanPham.getTensp(),
-                sanPham.getGhichu(),
-                sanPham.getRating(),
-                sanPham.getReviewCount(),
                 specsResponse,
                 sanPham.getLoai() != null ? sanPham.getLoai().getId() : null
         );

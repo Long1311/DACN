@@ -10,14 +10,6 @@ public class SanPham {
     private Long id;
 
     private String tensp;
-
-    private String ghichu;
-
-    private Double rating;
-
-    @Column(name = "review_count")
-    private Integer reviewCount;
-
     @Embedded
     private Specs specs;
 
@@ -28,9 +20,8 @@ public class SanPham {
     public SanPham() {
     }
 
-    public SanPham(String tensp, String ghichu, DanhMuc loai) {
+    public SanPham(String tensp, DanhMuc loai) {
         this.tensp = tensp;
-        this.ghichu = ghichu;
         this.loai = loai;
     }
 
@@ -50,36 +41,12 @@ public class SanPham {
         this.tensp = tensp;
     }
 
-    public String getGhichu() {
-        return ghichu;
-    }
-
-    public void setGhichu(String ghichu) {
-        this.ghichu = ghichu;
-    }
-
     public DanhMuc getLoai() {
         return loai;
     }
 
     public void setLoai(DanhMuc loai) {
         this.loai = loai;
-    }
-
-    public Double getRating() {
-        return rating;
-    }
-
-    public void setRating(Double rating) {
-        this.rating = rating;
-    }
-
-    public Integer getReviewCount() {
-        return reviewCount;
-    }
-
-    public void setReviewCount(Integer reviewCount) {
-        this.reviewCount = reviewCount;
     }
 
     public Specs getSpecs() {

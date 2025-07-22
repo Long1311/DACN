@@ -50,7 +50,7 @@ public class CartService {
             newItem.setCart(cart);
             newItem.setVariant(variant);
             newItem.setSoluong(soLuongThem);
-            newItem.setSelected(true);
+            newItem.setSelected(false);
             cart.getCartItems().add(newItem);
             cartItemsRepository.save(newItem);
         }

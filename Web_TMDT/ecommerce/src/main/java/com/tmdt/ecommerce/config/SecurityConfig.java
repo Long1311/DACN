@@ -36,25 +36,33 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ Public APIs
-                        .requestMatchers("/api/auth/**", "/api/sanpham/**", "/api/variants/**",
-                                "/api/variants/*/related", "/images/**", "/profiles/**", "/products/**",
-                                "/api/payment/**", "/api/upload/**", "/api/danhmuc/**", "/api/dashboard/**"
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/sanpham/**",
+                                "/api/variants/**",
+                                "/api/variants/*/related",
+                                "/api/danhmuc/**",
+                                "/images/**",
+                                "/products/**",
+                                "/api/upload/**",
+                                "/api/dashboard/**"
                         ).permitAll()
 
-                        // ✅ Cho phép USER và ADMIN dùng profile, đổi mật khẩu, avatar
-                        .requestMatchers("/api/users/profile", "/api/users/change-password","/api/orders/stats/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/users/profile").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/users/upload-avatar").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+                        .requestMatchers(
+                                "/api/cart/**",
+                                "/api/orders/**",
+                                "/api/orders/create-from-product",
+                                "/api/users/profile",
+                                "/api/users/change-password",
+                                "/api/users/upload-avatar",
+                                "/api/payment/**",
+                                "/api/orders/stats/**"
+                        ).hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
 
-                        // ✅ Admin-only APIs
                         .requestMatchers(HttpMethod.GET, "/api/users").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/users/**").hasAuthority("ROLE_ADMIN")
 
-                        // ✅ USER và ADMIN dùng được cart và các đơn hàng
-                        .requestMatchers("/api/cart/**", "/api/orders/**", "/api/orders/create-from-product").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
-
-                        // ✅ Mặc định bắt đăng nhập
+                        // Các request còn lại đều phải xác thực
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form.disable())

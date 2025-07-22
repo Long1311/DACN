@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -122,6 +123,23 @@ public class SanPhamVariantController {
                 .collect(Collectors.toList());
     }
 
+    @PutMapping("/{id}/add-stock")
+    public ResponseEntity<String> addStock(
+            @PathVariable Long id,
+            @RequestBody Map<String, Integer> body) {
+
+        int quantity = body.getOrDefault("quantity", 0);
+        Optional<SanPhamVariant> optional = variantService.getVariantById(id); // dùng service
+
+        if (optional.isPresent()) {
+            SanPhamVariant variant = optional.get();
+            variant.setSoluong(variant.getSoluong() + quantity);
+            variantService.saveVariant(variant);
+            return ResponseEntity.ok("Cập nhật tồn kho thành công");
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy sản phẩm");
+    }
 
     private SanPhamVariantResponse mapToResponse(SanPhamVariant variant) {
         return new SanPhamVariantResponse(
@@ -131,6 +149,8 @@ public class SanPhamVariantController {
                 variant.getGia(),
                 variant.getSoluong(),
                 variant.getDiscount(),
+                variant.getRating(),
+                variant.getReviewCount(),
                 variant.getImageUrl(),
                 variant.getSanPham().getId(),
                 variant.getSanPham().getTensp(),

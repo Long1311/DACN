@@ -38,10 +38,6 @@ public class SanPhamVariantService{
         return variantRepository.findById(id);
     }
 
-    public void saveVariant(SanPhamVariant variant) {
-        variantRepository.save(variant);
-    }
-
     public List<SanPhamVariant> getVariantsByLoaiId(Long loaiId) {
         return variantRepository.findBySanPham_Loai_Id(loaiId);
     }
@@ -113,12 +109,11 @@ public class SanPhamVariantService{
     }
 
     public void addProduct(AddProductRequest request) {
-        SanPham sanPham = sanPhamRepository.findByTensp(request.getTensp())
+        String normalizedName = normalizeProductName(request.getTensp());
+        SanPham sanPham = sanPhamRepository.findByNormalizedTensp(normalizedName)
                 .orElseGet(() -> {
                     SanPham newSanPham = new SanPham();
                     newSanPham.setTensp(request.getTensp());
-                    newSanPham.setRating(0.0);
-                    newSanPham.setReviewCount(0);
 
                     if (request.getDanhMucId() != null) {
                         DanhMuc danhMuc = danhMucRepository.findById(request.getDanhMucId())
@@ -151,7 +146,9 @@ public class SanPhamVariantService{
             variant.setImageUrl(request.getImageUrl());
             variant.setDisabled(false);
 
-            // Tính discount riêng cho từng biến thể
+            variant.setRating(0.0);
+            variant.setReviewCount(0);
+
             Integer discount = 0;
             if (variant.getOriginalPrice() > giaToLuu) {
                 double discountPercentage = ((variant.getOriginalPrice() - giaToLuu) / variant.getOriginalPrice()) * 100;
@@ -162,4 +159,13 @@ public class SanPhamVariantService{
             variantRepository.save(variant);
         }
     }
+
+    public void saveVariant(SanPhamVariant variant) {
+        variantRepository.save(variant);
+    }
+
+    private String normalizeProductName(String name) {
+        return name.trim().toLowerCase().replaceAll("\\s+", "");
+    }
+
 }

@@ -54,9 +54,13 @@ const SearchPage = () => {
         ? images
         : null;
 
-    return img?.startsWith("http")
-      ? img
-      : `http://localhost:8080/images/products/${img || "placeholder.jpg"}`;
+    if (!img) return "/placeholder.jpg";
+
+    if (img.startsWith("http") || img.startsWith("https")) {
+      return img;
+    }
+
+    return `http://localhost:8080/images/products/${img}`;
   };
 
   return (
@@ -86,9 +90,8 @@ const SearchPage = () => {
                   hoverable
                   cover={
                     <img
-                      alt={product.tensp}
                       src={getImageUrl(product.images)}
-                      className="h-56 object-cover rounded"
+                      alt={product.tensp}
                     />
                   }
                   onClick={() => navigate(`/product/${product.variantId}`)}
@@ -106,6 +109,7 @@ const SearchPage = () => {
                     }
                   />
                 </Card>
+                <p>Debug: {JSON.stringify(product.images)}</p> {/* Thêm log */}
               </Col>
             ))}
           </Row>

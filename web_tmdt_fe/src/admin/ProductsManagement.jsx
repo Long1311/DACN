@@ -31,6 +31,10 @@ const ProductsManagement = () => {
   const [stockFilter, setStockFilter] = useState("");
   const [showAddProduct, setShowAddProduct] = useState(false);
 
+  const [showQuantityModal, setShowQuantityModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [quantityToAdd, setQuantityToAdd] = useState(0);
+
   useEffect(() => {
     fetchVariants();
   }, []);
@@ -111,6 +115,31 @@ const ProductsManagement = () => {
     }
   };
 
+  const handleAddStock = async () => {
+    if (!selectedProduct || quantityToAdd <= 0) {
+      message.warning("Vui lòng nhập số lượng hợp lệ.");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `http://localhost:8080/api/variants/${selectedProduct.rawId}/add-stock`,
+        { quantity: quantityToAdd },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      message.success("Cập nhật tồn kho thành công");
+      setShowQuantityModal(false);
+      setSelectedProduct(null);
+      setQuantityToAdd(0);
+      fetchVariants();
+    } catch (err) {
+      console.error(err);
+      message.error("Lỗi khi cập nhật tồn kho");
+    }
+  };
+
   const columns = [
     {
       title: "STT",
@@ -165,7 +194,15 @@ const ProductsManagement = () => {
       title: "Thao tác",
       render: (_, record) => (
         <Space>
-          <Button type="text" icon={<EditOutlined />} />
+          <Button
+            type="text"
+            icon={<EditOutlined />}
+            onClick={() => {
+              setSelectedProduct(record);
+              setQuantityToAdd(0);
+              setShowQuantityModal(true);
+            }}
+          />
           <Button
             type="text"
             icon={record.disabled ? <CheckOutlined /> : <StopOutlined />}
@@ -247,6 +284,35 @@ const ProductsManagement = () => {
                 fetchVariants();
               }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Modal cập nhật tồn kho */}
+      {showQuantityModal && selectedProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[400px] relative">
+            <button
+              onClick={() => setShowQuantityModal(false)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-red-500 text-lg"
+            >
+              ✖
+            </button>
+            <Title level={5}>Thêm số lượng tồn kho</Title>
+            <Text>Sản phẩm: {selectedProduct.name}</Text>
+            <Input
+              type="number"
+              min={1}
+              value={quantityToAdd}
+              onChange={(e) => setQuantityToAdd(Number(e.target.value))}
+              className="mt-3 mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => setShowQuantityModal(false)}>Hủy</Button>
+              <Button type="primary" onClick={handleAddStock}>
+                Cập nhật
+              </Button>
+            </div>
           </div>
         </div>
       )}

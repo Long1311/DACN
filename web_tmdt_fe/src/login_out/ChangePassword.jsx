@@ -1,5 +1,5 @@
 import React from "react";
-import { Form, Input, Button, message } from "antd";
+import { Form, Input, Button, message} from "antd";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -33,7 +33,7 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50">
+    <div className="flex justify-center items-center bg-gray-50">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-semibold mb-4 text-center">
           Đổi mật khẩu

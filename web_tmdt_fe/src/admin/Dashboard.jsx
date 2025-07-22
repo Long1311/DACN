@@ -1,10 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { Row, Col, Card, Table, Typography } from "antd";
+import {
+  Row,
+  Col,
+  Card,
+  Table,
+  Typography,
+  message,
+  Tooltip,
+  Modal,
+  InputNumber,
+  Button,
+} from "antd";
 import {
   TeamOutlined,
   ShoppingOutlined,
   DollarOutlined,
   RiseOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
 import ReactECharts from "echarts-for-react";
 import axios from "axios";
@@ -29,6 +41,10 @@ const Dashboard = () => {
   const [topProducts, setTopProducts] = useState([]);
   const [lowStockProducts, setLowStockProducts] = useState([]);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [quantity, setQuantity] = useState(0);
+
   const { revenueData, statusData, userTrend, orderTrend } =
     useDashboardChartData();
 
@@ -43,6 +59,10 @@ const Dashboard = () => {
       .then((res) => setTopProducts(res.data))
       .catch((err) => console.error("Lỗi tải top sản phẩm:", err));
 
+    fetchLowStock();
+  }, []);
+
+  const fetchLowStock = () => {
     axios
       .get("http://localhost:8080/api/dashboard/low-stock")
       .then((res) => {
@@ -55,7 +75,33 @@ const Dashboard = () => {
         setLowStockProducts(mapped);
       })
       .catch((err) => console.error("Lỗi tải thống kê tồn kho:", err));
-  }, []);
+  };
+
+  const handleEditStock = (record) => {
+    setSelectedProduct(record);
+    setQuantity(0);
+    setIsModalOpen(true);
+  };
+
+  const handleUpdateStock = async () => {
+    if (!quantity || quantity <= 0) {
+      message.warning("Vui lòng nhập số lượng hợp lệ.");
+      return;
+    }
+
+    try {
+      await axios.put(
+        `http://localhost:8080/api/variants/${selectedProduct.id}/add-stock`,
+        { quantity }
+      );
+      message.success("Cập nhật tồn kho thành công!");
+      setIsModalOpen(false);
+      fetchLowStock();
+    } catch (error) {
+      message.error("Cập nhật thất bại.");
+      console.error(error);
+    }
+  };
 
   const cardData = [
     {
@@ -102,7 +148,6 @@ const Dashboard = () => {
         const fullImageUrl = image?.startsWith("http")
           ? image
           : `http://localhost:8080/images/products/${image}`;
-
         return (
           <img
             src={fullImageUrl}
@@ -138,8 +183,6 @@ const Dashboard = () => {
     },
   ];
 
-  const top5Products = topProducts.slice(0, 5);
-
   const lowStockColumns = [
     {
       title: "STT",
@@ -154,7 +197,6 @@ const Dashboard = () => {
         const fullImageUrl = image?.startsWith("http")
           ? image
           : `http://localhost:8080/images/products/${image}`;
-
         return (
           <img
             src={fullImageUrl}
@@ -181,6 +223,22 @@ const Dashboard = () => {
         </span>
       ),
     },
+    {
+      title: "Hành động",
+      key: "action",
+      render: (_, record) => (
+        <Tooltip title="Thêm tồn kho">
+          <EditOutlined
+            style={{
+              color: "#1890ff",
+              cursor: "pointer",
+              fontSize: 16,
+            }}
+            onClick={() => handleEditStock(record)}
+          />
+        </Tooltip>
+      ),
+    },
   ];
 
   return (
@@ -201,13 +259,6 @@ const Dashboard = () => {
                   <Title level={3} className="m-0 mt-2">
                     {card.value}
                   </Title>
-                  <Text
-                    className={`flex items-center mt-1 ${
-                      card.isUp ? "text-green-500" : "text-red-500"
-                    }`}
-                  >
-                    {card.isUp ? "+12%" : "-3%"}
-                  </Text>
                 </div>
                 <div
                   className="flex items-center justify-center w-12 h-12 rounded-full"
@@ -257,7 +308,7 @@ const Dashboard = () => {
         <Col span={24}>
           <Card title="Top 5 sản phẩm bán chạy nhất" className="shadow-sm">
             <Table
-              dataSource={top5Products}
+              dataSource={topProducts.slice(0, 5)}
               columns={topProductsColumns}
               pagination={false}
               rowKey="variantId"
@@ -278,6 +329,33 @@ const Dashboard = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Modal thêm tồn kho */}
+      <Modal
+        open={isModalOpen}
+        title="Thêm số lượng tồn kho"
+        onCancel={() => setIsModalOpen(false)}
+        footer={null}
+      >
+        <p>
+          Sản phẩm:{" "}
+          <strong>{selectedProduct ? selectedProduct.name : ""}</strong>
+        </p>
+        <InputNumber
+          min={1}
+          value={quantity}
+          onChange={(value) => setQuantity(value)}
+          style={{ width: "100%", marginTop: 8, marginBottom: 16 }}
+        />
+        <div style={{ textAlign: "right" }}>
+          <Button onClick={() => setIsModalOpen(false)} style={{ marginRight: 8 }}>
+            Hủy
+          </Button>
+          <Button type="primary" onClick={handleUpdateStock}>
+            Cập nhật
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 };

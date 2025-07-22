@@ -41,9 +41,7 @@ public class DataInitializer implements CommandLineRunner {
             danhMucRepository.save(phukien);
 
             // Tạo sản phẩm iPhone
-            SanPham sp1 = new SanPham("iPhone 15 Pro", "Mới 100%", iphone);
-            sp1.setRating(0.0);
-            sp1.setReviewCount(0);
+            SanPham sp1 = new SanPham("iPhone 15 Pro", iphone);
             sp1.setSpecs(new Specs("OLED 6.1 inch", "A17 Pro", "6GB", "48MP", "12MP", "4380 mAh", "iOS 17"));
             sanPhamService.saveSanPham(sp1);
 
@@ -52,9 +50,7 @@ public class DataInitializer implements CommandLineRunner {
             createVariant(sp1, "Đen", "512GB", 10500000.0, 30, "ip15pro_den.jpg");
 
             // Tạo sản phẩm Samsung
-            SanPham sp2 = new SanPham("Samsung Galaxy S23", "Mới 100%", samsung);;
-            sp2.setRating(0.0);
-            sp2.setReviewCount(0);
+            SanPham sp2 = new SanPham("Samsung Galaxy S23", samsung);;
             sp2.setSpecs(new Specs("Dynamic AMOLED 6.1 inch", "Snapdragon 8 Gen 2", "8GB","50MP", "12MP", "3900 mAh", "Android 13"));
             sanPhamService.saveSanPham(sp2);
 

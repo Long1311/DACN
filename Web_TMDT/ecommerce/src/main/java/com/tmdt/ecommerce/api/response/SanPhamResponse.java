@@ -3,22 +3,15 @@ package com.tmdt.ecommerce.api.response;
 public class SanPhamResponse {
     private Long id;
     private String tensp;
-    private String ghichu;
-    private Double rating;
-    private Integer reviewCount;
     private SpecsResponse specs;
     private Long loaiId;
 
     public SanPhamResponse() {
     }
 
-    public SanPhamResponse(Long id, String tensp, String ghichu,
-                           Double rating, Integer reviewCount, SpecsResponse specs, Long loaiId) {
+    public SanPhamResponse(Long id, String tensp, SpecsResponse specs, Long loaiId) {
         this.id = id;
         this.tensp = tensp;
-        this.ghichu = ghichu;
-        this.rating = rating;
-        this.reviewCount = reviewCount;
         this.specs = specs;
         this.loaiId = loaiId;
     }
@@ -40,36 +33,12 @@ public class SanPhamResponse {
         this.tensp = tensp;
     }
 
-    public String getGhichu() {
-        return ghichu;
-    }
-
-    public void setGhichu(String ghichu) {
-        this.ghichu = ghichu;
-    }
-
     public Long getLoaiId() {
         return loaiId;
     }
 
     public void setLoaiId(Long loaiId) {
         this.loaiId = loaiId;
-    }
-
-    public Double getRating() {
-        return rating;
-    }
-
-    public void setRating(Double rating) {
-        this.rating = rating;
-    }
-
-    public Integer getReviewCount() {
-        return reviewCount;
-    }
-
-    public void setReviewCount(Integer reviewCount) {
-        this.reviewCount = reviewCount;
     }
 
     public SpecsResponse getSpecs() {

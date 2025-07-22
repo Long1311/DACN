@@ -67,10 +67,8 @@ const Login = () => {
 
       const { token, userResponse } = response.data;
 
-      // Lưu vào localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(userResponse));
-      // localStorage.removeItem("token");
 
       setUser(userResponse);
       message.success("Đăng nhập thành công!");

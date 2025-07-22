@@ -31,7 +31,6 @@ import Layout from "../common/Layout";
 
 const { Title, Text, Paragraph } = Typography;
 
-// Tạo axiosInstance để sử dụng chung
 const axiosInstance = axios.create({
   baseURL: "http://localhost:8080",
   headers: {
@@ -39,7 +38,6 @@ const axiosInstance = axios.create({
   },
 });
 
-// Interceptor để thêm token vào mọi yêu cầu
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -70,15 +68,58 @@ const ProductDetail = () => {
   useEffect(() => {
     const fetchProductAndVariants = async () => {
       try {
-        console.log("Fetching product with ID:", id);
-        const productRes = await axiosInstance.get(`/api/variants/${id}`);
-        const productData = productRes.data;
+        console.log("ID from useParams (variant ID):", id);
+        if (!id || isNaN(id)) {
+          console.error("Invalid variant ID:", id);
+          message.error("ID biến thể sản phẩm không hợp lệ!");
+          setLoading(false);
+          return;
+        }
 
+        // Bước 1: Lấy thông tin biến thể để lấy sanPhamId
+        const variantRes = await axiosInstance.get(`/api/variants/${id}`);
+        const variantData = variantRes.data;
+        console.log("Variant data:", variantData);
+
+        if (!variantData.sanPhamId) {
+          console.error("No sanPhamId found in variant data:", variantData);
+          message.error("Không tìm thấy ID sản phẩm liên quan!");
+          setLoading(false);
+          return;
+        }
+
+        // Bước 2: Lấy thông tin sản phẩm dựa trên sanPhamId
+        const productRes = await axiosInstance.get(
+          `/api/sanpham/${variantData.sanPhamId}`
+        );
+        const productData = productRes.data;
+        console.log("Product data:", productData);
+
+        if (!productData.specs) {
+          console.warn("No specs data found for product:", productData);
+          message.warning("Thông tin sản phẩm không đầy đủ!");
+        }
+
+        // Bước 3: Lấy danh sách biến thể và sản phẩm tương tự
         const [variantsRes, relatedRes] = await Promise.all([
-          axiosInstance.get(`/api/variants/sanpham/${productData.sanPhamId}`),
-          axiosInstance.get(`/api/variants/${id}/related`),
+          axiosInstance
+            .get(`/api/variants/sanpham/${variantData.sanPhamId}`)
+            .catch((err) => {
+              console.error(
+                `Error fetching variants for sanPhamId ${variantData.sanPhamId}:`,
+                err
+              );
+              return { data: [] };
+            }),
+          axiosInstance.get(`/api/variants/${id}/related`).catch((err) => {
+            console.error(
+              `Error fetching related products for variant ID ${id}:`,
+              err
+            );
+            return { data: [] };
+          }),
         ]);
-        const variantData = variantsRes.data;
+        const variantsData = variantsRes.data;
 
         const images = Array.isArray(productData.images)
           ? productData.images.map((img) =>
@@ -95,7 +136,7 @@ const ProductDetail = () => {
           : [];
 
         setProduct({
-          id: productData.id || id,
+          id: productData.id || variantData.sanPhamId,
           name: productData.tensp || "Unknown Product",
           rating: productData.rating || 0,
           reviewCount: productData.reviewCount || 0,
@@ -117,27 +158,31 @@ const ProductDetail = () => {
             os: productData.specs?.os || "Unknown",
           },
           description: productData.ghichu || "No description available",
-          colors: [...new Set(variantData.map((v) => v.color))],
-          storage: [...new Set(variantData.map((v) => v.storage))],
+          colors: [...new Set(variantsData.map((v) => v.color))],
+          storage: [...new Set(variantsData.map((v) => v.storage))],
         });
 
-        setVariants(variantData || []);
+        setVariants(variantsData || []);
         setRelatedProducts(relatedRes.data || []);
         setSelectedImage(images[0]);
 
-        if (variantData.length > 0) {
-          setSelectedColor(variantData[0].color);
-          setSelectedStorage(variantData[0].storage);
+        if (variantsData.length > 0) {
+          setSelectedColor(variantsData[0].color);
+          setSelectedStorage(variantsData[0].storage);
         }
       } catch (error) {
         console.error("Lỗi khi tải sản phẩm:", error);
-        message.error("Không thể tải sản phẩm.");
+        if (error.response?.status === 404) {
+          message.error(`Sản phẩm hoặc biến thể với ID ${id} không tồn tại!`);
+        } else {
+          message.error("Không thể tải sản phẩm. Vui lòng thử lại!");
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    if (id && id !== "undefined") fetchProductAndVariants();
+    if (id) fetchProductAndVariants();
   }, [id]);
 
   useEffect(() => {
@@ -165,7 +210,7 @@ const ProductDetail = () => {
     const token = localStorage.getItem("token");
     if (!token) {
       message.warning("Bạn cần đăng nhập để mua sản phẩm!");
-      navigate("/login");
+      navigate("/login", { state: { from: window.location.pathname } });
       return;
     }
 
@@ -246,7 +291,7 @@ const ProductDetail = () => {
     const token = localStorage.getItem("token");
     if (!token) {
       message.warning("Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng!");
-      navigate("/login");
+      navigate("/login", { state: { from: window.location.pathname } });
       return;
     }
     if (!selectedColor || !selectedStorage) {
@@ -447,9 +492,6 @@ const ProductDetail = () => {
                   </div>
                 </div>
                 <Divider className="my-4" />
-                <Paragraph className="text-gray-600">
-                  {product.description}
-                </Paragraph>
                 <div className="mb-4">
                   <Text strong className="block mb-2">
                     Số lượng:

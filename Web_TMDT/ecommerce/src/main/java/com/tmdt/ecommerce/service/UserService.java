@@ -1,5 +1,6 @@
 package com.tmdt.ecommerce.service;
 
+import com.cloudinary.Cloudinary;
 import com.tmdt.ecommerce.dto.request.ChangePasswordRequest;
 import com.tmdt.ecommerce.dto.request.UserRequest;
 import com.tmdt.ecommerce.api.response.UserResponse;
@@ -14,7 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,6 +28,9 @@ public class UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private Cloudinary cloudinary;
 
 
      //Đăng ký
@@ -156,6 +162,17 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public String uploadAvatarToCloudinary(MultipartFile file) {
+        try {
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), Map.of(
+                    "folder", "avatars"
+            ));
+            return (String) uploadResult.get("secure_url");
+        } catch (IOException e) {
+            throw new RuntimeException("Upload to Cloudinary failed: " + e.getMessage());
+        }
+    }
+
     public List<UserResponse> getAllUsers() {
         List<User> users = userRepository.findAll();
         return users.stream()
@@ -197,8 +214,6 @@ public class UserService {
         user.setEnabled(enabled);
         userRepository.save(user);
     }
-
-
 
     //Chuyển đổi từ User sang UserResponse
     private UserResponse convertToUserResponse(User user) {

@@ -12,9 +12,5 @@ public class WebConfig implements WebMvcConfigurer {
         // ánh xạ URL /images/products/** tới thư mục thực tế
         registry.addResourceHandler("/images/products/**")
                 .addResourceLocations("file:D:/DACN/Web_TMDT/uploads/products/");
-
-        // Ánh xạ ảnh avatar người dùng
-        registry.addResourceHandler("/profiles/**")
-                .addResourceLocations("file:D:/DACN/Web_TMDT/uploads/profiles/");
     }
 }

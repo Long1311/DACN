@@ -140,7 +140,7 @@ const ProductList = () => {
                         disabled
                         allowHalf
                         defaultValue={product.rating}
-                        style={{ color: "#d9d9d9" }} // xám nếu 0
+                        style={{ color: "#d9d9d9" }}
                         className="text-sm"
                       />
                       <Text className="text-gray-500 text-xs ml-2">

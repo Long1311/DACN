@@ -6,27 +6,21 @@ import com.tmdt.ecommerce.api.response.UserResponse;
 import com.tmdt.ecommerce.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
-import java.nio.file.*;
-import java.io.IOException;
+
 import java.util.List;
-import java.util.UUID;
+
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
     @Autowired
     private UserService userService;
-
-    @Value("${upload.avatar.path}")
-    private String uploadDir;
 
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@RequestBody UserRequest request) {
@@ -86,6 +80,20 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/upload-avatar")
+    public ResponseEntity<String> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        try {
+            String imageUrl = userService.uploadAvatarToCloudinary(file);
+
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+            userService.updateAvatar(username, imageUrl);
+
+            return ResponseEntity.ok(imageUrl);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi upload ảnh: " + e.getMessage());
+        }
+    }
 
     @PutMapping("/change-password")
     public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
@@ -97,33 +105,6 @@ public class UserController {
         return userService.changePassword(request, userDetails.getUsername());
     }
 
-    @PostMapping("/upload-avatar")
-    public ResponseEntity<?> uploadAvatar(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body("File rỗng");
-        }
-
-        try {
-            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-            Path filePath = Paths.get(uploadDir + fileName);
-            Files.createDirectories(filePath.getParent());
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-            String imageUrl = "/profiles/" + fileName;
-
-            // Gọi hàm mới để cập nhật ảnh
-            UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            if (userDetails != null) {
-                userService.updateAvatar(userDetails.getUsername(), imageUrl);
-            }
-
-            return ResponseEntity.ok(imageUrl);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Lỗi khi lưu ảnh: " + e.getMessage());
-        }
-    }
 
     @GetMapping("/stats/new-users-by-month")
     public ResponseEntity<List<Integer>> getNewUsersByMonth() {

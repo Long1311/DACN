@@ -155,9 +155,13 @@ const Profile = () => {
                 <div className="relative">
                   <div className="w-40 h-40 rounded-full overflow-hidden bg-gray-100 border">
                     <img
-                      src={`http://localhost:8080${profileImage}`}
+                      src={profileImage}
                       alt="Avatar"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/default-avatar.jpg";
+                      }}
                     />
                   </div>
                   {isEditing && (

@@ -162,23 +162,23 @@ const HeaderComponent = () => {
 
   const userMenuItems = user
     ? [
-        { key: "1", label: `Xin chào, ${user.name}`, disabled: true },
-        {
-          key: "2",
-          label: "Đổi mật khẩu",
-          onClick: () => navigate("/ChangePassword"),
-        },
-        {
-          key: "3",
-          label: "Thông tin cá nhân",
-          onClick: () => navigate("/profile"),
-        },
-        { key: "4", label: "Đăng xuất", onClick: handleLogout },
-      ]
+      { key: "1", label: `Xin chào, ${user.name}`, disabled: true },
+      {
+        key: "2",
+        label: "Đổi mật khẩu",
+        onClick: () => navigate("/ChangePassword"),
+      },
+      {
+        key: "3",
+        label: "Thông tin cá nhân",
+        onClick: () => navigate("/profile"),
+      },
+      { key: "4", label: "Đăng xuất", onClick: handleLogout },
+    ]
     : [
-        { key: "1", label: "Đăng nhập", onClick: () => navigate("/login") },
-        { key: "2", label: "Đăng ký", onClick: () => navigate("/register") },
-      ];
+      { key: "1", label: "Đăng nhập", onClick: () => navigate("/login") },
+      { key: "2", label: "Đăng ký", onClick: () => navigate("/register") },
+    ];
 
   const notificationContent = user ? (
     <div style={{ width: 250 }}>
@@ -273,7 +273,11 @@ const HeaderComponent = () => {
       <div className="hidden md:flex items-center space-x-4">
         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
           <div className="cursor-pointer flex items-center">
-            <Avatar icon={<UserOutlined />} className="bg-blue-500" />
+            <Avatar
+              src={user?.avatarUrl || null}
+              icon={!user?.avatarUrl ? <UserOutlined /> : null}
+              className="bg-blue-500"
+            />
             <span className="ml-2">{user ? user.name : "Tài khoản"}</span>
           </div>
         </Dropdown>

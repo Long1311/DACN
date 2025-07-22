@@ -89,8 +89,13 @@ const Cart = () => {
             soluong: item.soluong || 1,
             variantName: item.variantName || "",
             images: item.image
-              ? [`http://localhost:8080/images/products/${item.image}`]
+              ? [
+                  item.image.startsWith("http")
+                    ? item.image
+                    : `http://localhost:8080/images/products/${item.image}`,
+                ]
               : ["https://placehold.co/150x150?text=Image"],
+
             selected: item.selected !== false,
           }))
         : [];

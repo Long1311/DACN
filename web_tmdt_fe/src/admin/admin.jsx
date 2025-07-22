@@ -47,11 +47,10 @@ const Admin = () => {
             },
           }
         );
-
         setUserInfo({
           name: response.data.name || response.data.username,
           role: response.data.role,
-          avatar: response.data.avatar || "",
+          avatar: response.data.avatarUrl || "",
         });
       } catch (error) {
         console.error("Lỗi khi lấy thông tin người dùng", error);
@@ -197,7 +196,13 @@ const Admin = () => {
             </Tooltip>
             <Dropdown overlay={userMenu} placement="bottomRight" arrow>
               <div className="flex items-center gap-3 cursor-pointer">
-                <Avatar src={userInfo.avatar || defaultAvatar} size={40} />
+                <Avatar
+                  src={userInfo.avatar?.trim() || null}
+                  icon={!userInfo.avatar?.trim() ? <UserOutlined /> : null}
+                  size={40}
+                  className="bg-blue-500"
+                />
+
                 <div className="hidden md:flex flex-col justify-center">
                   <Text strong>{userInfo.name || "---"}</Text>
                   <Text type="secondary" className="text-xs">

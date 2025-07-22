@@ -321,7 +321,9 @@ const ProductDetail = () => {
                 <img
                   src={
                     selectedVariant?.imageUrl
-                      ? `http://localhost:8080/images/products/${selectedVariant.imageUrl}`
+                      ? selectedVariant.imageUrl.startsWith("http")
+                        ? selectedVariant.imageUrl
+                        : `http://localhost:8080/images/products/${selectedVariant.imageUrl}`
                       : product.images[0] ||
                         "https://placehold.co/500x500?text=No+Image"
                   }
@@ -714,9 +716,13 @@ const ProductDetail = () => {
                               hoverable
                               cover={
                                 <img
-                                  src={`http://localhost:8080/images/products/${
-                                    item.imageUrl || "default.png"
-                                  }`}
+                                  src={
+                                    item.imageUrl
+                                      ? item.imageUrl.startsWith("http")
+                                        ? item.imageUrl
+                                        : `http://localhost:8080/images/products/${item.imageUrl}`
+                                      : "https://placehold.co/220x220?text=No+Image"
+                                  }
                                   alt={item.tensp}
                                   className="p-4 object-contain h-48"
                                   onError={(e) => {

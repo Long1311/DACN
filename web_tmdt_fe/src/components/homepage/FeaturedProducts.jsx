@@ -17,7 +17,8 @@ const FeaturedProducts = () => {
       .get("http://localhost:8080/api/variants/featured")
       .then((response) => {
         const data = Array.isArray(response.data) ? response.data : [];
-        const formatted = data.map((product) => ({
+        const filteredData = data.filter((product) => product.disabled !== true);
+        const formatted = filteredData.map((product) => ({
           ...product,
           imageUrl: product.imageUrl
             ? product.imageUrl.startsWith("http")

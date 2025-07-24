@@ -52,8 +52,8 @@ const FlashSale = () => {
               typeof product.reviewCount === "number" ? product.reviewCount : 0,
           };
         });
-
-        setProducts(formatted);
+        const filtered = formatted.filter((product) => !product.disabled);
+        setProducts(filtered);
       })
       .catch((error) => {
         console.error("Error fetching flash sale products:", error);

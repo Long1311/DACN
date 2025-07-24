@@ -1,7 +1,6 @@
 package com.tmdt.ecommerce.controller;
 
 import com.tmdt.ecommerce.api.response.OrderResponse;
-import com.tmdt.ecommerce.dto.request.CreateOrderRequest;
 import com.tmdt.ecommerce.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +23,7 @@ public class OrderController {
     private OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<OrderResponse> createOrder(@RequestBody CreateOrderRequest request) {
+    public ResponseEntity<OrderResponse> createOrder() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
             logger.warning("Unauthorized attempt to create order: No valid authentication");
@@ -32,8 +31,7 @@ public class OrderController {
         }
         UserDetails userDetails = (UserDetails) auth.getPrincipal();
         String username = userDetails.getUsername();
-        logger.info("Creating order for username: " + username + ", paymentMethod: " + request.getPaymentMethod());
-        OrderResponse response = orderService.createOrder(username, request.getPaymentMethod());
+        OrderResponse response = orderService.createOrder(username);
         return ResponseEntity.ok(response);
     }
 

@@ -10,7 +10,6 @@ public class OrderItemsResponse {
     private String color;
     private String storage;
 
-
     public OrderItemsResponse() {
     }
 

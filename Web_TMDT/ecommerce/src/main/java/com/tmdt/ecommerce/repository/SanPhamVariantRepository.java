@@ -17,7 +17,12 @@ public interface SanPhamVariantRepository extends JpaRepository<SanPhamVariant, 
 
     List<SanPhamVariant> findBySanPham_Loai_Id(Long loaiId);
 
-    Page<SanPhamVariant> findBySanPham_TenspContainingIgnoreCase(String keyword, Pageable pageable);
+    @Query("SELECT v FROM SanPhamVariant v WHERE " +
+            "(LOWER(v.sanPham.tensp) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(v.color) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR LOWER(v.storage) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND v.disabled = false")
+    Page<SanPhamVariant> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
     List<SanPhamVariant> findByColorIgnoreCase(String color);
 
@@ -27,18 +32,16 @@ public interface SanPhamVariantRepository extends JpaRepository<SanPhamVariant, 
 
     List<SanPhamVariant> findTop4BySanPham_Loai_IdAndIdNot(Long loaiId, Long excludeId);
 
-    List<SanPhamVariant> findTop3ByOrderByCreatedAtDesc();
+    @Query("SELECT v FROM SanPhamVariant v ORDER BY v.createdAt DESC")
+    List<SanPhamVariant> findTopNewestVariants(Pageable pageable);
 
-    @Query("SELECT v FROM SanPhamVariant v WHERE v.discount > 0 ORDER BY v.createdAt DESC")
-    List<SanPhamVariant> findTopDiscountedVariants(Pageable pageable);
-
+    @Query("SELECT v FROM SanPhamVariant v WHERE v.discount > 0 AND v.disabled = false ORDER BY v.createdAt DESC")
+    List<SanPhamVariant> findTopDiscountedVariants();
 
     @Query("SELECT new com.tmdt.ecommerce.api.response.LowStockProductResponse( " +
             "v.id, v.sanPham.tensp, v.soluong, 20, v.color, v.storage, v.imageUrl) " +
             "FROM SanPhamVariant v WHERE v.soluong <= 20")
     Page<LowStockProductResponse> findLowStockProducts(Pageable pageable);
-
-
 
     @Query("SELECT new com.tmdt.ecommerce.api.response.TopSellingProductResponse( " +
             "v.id, v.sanPham.tensp, v.color, v.storage, SUM(oi.soluong), SUM(oi.soluong * oi.gia), v.imageUrl) " +

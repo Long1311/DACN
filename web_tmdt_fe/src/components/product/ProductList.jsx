@@ -32,7 +32,9 @@ const ProductList = () => {
         );
         const data = response.data;
 
-        const formattedProducts = data.map((item) => ({
+        const formattedProducts = data
+        .filter((item) => item.disabled === false)
+        .map((item) => ({
           id: item.id,
           tensp: item.tensp,
           gia: item.gia,

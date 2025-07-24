@@ -106,33 +106,19 @@ public class CartController {
         }
     }
 
-    // ✅ Cập nhật số lượng hoặc trạng thái chọn
     @PutMapping("/update")
     public ResponseEntity<String> updateCartItem(
             @RequestParam Long cartItemId,
             @RequestParam(required = false) Integer soluong,
             @RequestParam(required = false) Boolean selected) {
         try {
-            CartItems item = cartItemsRepository.findById(cartItemId)
-                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm trong giỏ"));
-
-            if (soluong != null && soluong > 0) {
-                item.setSoluong(soluong);
-            }
-
-            if (selected != null) {
-                item.setSelected(selected);
-            }
-
-            cartItemsRepository.save(item);
+            cartService.updateCartItem(cartItemId, soluong, selected);
             return ResponseEntity.ok("Cập nhật giỏ hàng thành công");
-
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Lỗi khi cập nhật giỏ hàng: " + e.getMessage());
         }
     }
 
-    // ✅ Xóa sản phẩm khỏi giỏ
     @DeleteMapping("/remove")
     public ResponseEntity<?> removeCartItem(@RequestParam Long cartItemId) {
         try {
@@ -149,38 +135,4 @@ public class CartController {
             return ResponseEntity.status(500).body("Lỗi khi xóa sản phẩm: " + e.getMessage());
         }
     }
-
-    // ✅ Thanh toán giỏ hàng
-    @PostMapping("/checkout")
-    public ResponseEntity<String> checkout(@RequestParam String paymentMethod) {
-        try {
-            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-            if (!(principal instanceof UserDetails userDetails)) {
-                return ResponseEntity.status(401).body("Bạn chưa đăng nhập");
-            }
-
-            User user = userService.findByUsername(userDetails.getUsername())
-                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng"));
-
-            Carts cart = cartService.getCartByUser(user);
-
-            List<CartItems> selectedItems = cart.getCartItems().stream()
-                    .filter(CartItems::getSelected)
-                    .collect(Collectors.toList());
-
-            if (selectedItems.isEmpty()) {
-                return ResponseEntity.badRequest().body("Không có sản phẩm nào được chọn để thanh toán");
-            }
-
-            // Xoá từng sản phẩm đã chọn
-            selectedItems.forEach(cartItemsRepository::delete);
-
-            return ResponseEntity.ok("Thanh toán thành công với phương thức: " + paymentMethod);
-
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Lỗi khi thanh toán: " + e.getMessage());
-        }
-    }
-
 }

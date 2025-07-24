@@ -16,43 +16,48 @@ const ThanhToan = () => {
   });
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const vnpCode = params.get("vnp_ResponseCode");
+  const params = new URLSearchParams(location.search);
+  const vnpCode = params.get("vnp_ResponseCode");
 
-    if (vnpCode) {
-      const token = localStorage.getItem("token");
+  // Ngăn gọi lại nhiều lần nếu đã xử lý
+  let isHandled = sessionStorage.getItem("vnpay_return_handled");
 
-      fetch(
-        "http://localhost:8080/api/payment/vnpay-return" + location.search,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+  if (vnpCode && !isHandled) {
+    sessionStorage.setItem("vnpay_return_handled", "1");
+
+    const token = localStorage.getItem("token");
+
+    fetch("http://localhost:8080/api/payment/vnpay-return" + location.search, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === "success") {
+          message.success("🎉 Thanh toán thành công!");
+          localStorage.setItem("cartCount", "0");
+          sessionStorage.removeItem("checkoutProducts");
+          window.dispatchEvent(new Event("cart-updated"));  
+          setTimeout(() => navigate("/"), 3000);
+        } else if (data.status === "already_ordered") {
+          message.info("Đơn hàng này đã được xử lý trước đó.");
+        } else {
+          message.error("❌ Thanh toán thất bại.");
         }
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.status === "success") {
-            message.success("🎉 Thanh toán thành công!");
-            localStorage.setItem("cartCount", "0");
-            sessionStorage.removeItem("checkoutProducts");
-            window.dispatchEvent(new Event("cart-updated"));
-            setTimeout(() => navigate("/"), 3000);
-          } else {
-            message.error("❌ Thanh toán thất bại.");
-          }
-        })
-        .catch((err) => {
-          console.error("Xác nhận thanh toán thất bại:", err);
-          message.error("❌ Đã xảy ra lỗi.");
-        })
-        .finally(() => {
-          setTimeout(() => {
-            window.history.replaceState(null, "", "/thanhtoan");
-          }, 2000);
-        });
-    }
-  }, [location.search, navigate]);
+      })
+      .catch((err) => {
+        console.error("Xác nhận thanh toán thất bại:", err);
+        message.error("❌ Đã xảy ra lỗi.");
+      })
+      .finally(() => {
+        setTimeout(() => {
+          window.history.replaceState(null, "", "/thanhtoan");
+        }, 2000);
+      });
+  }
+}, [location.search, navigate]);
+
 
   useEffect(() => {
     let list = location.state?.products;

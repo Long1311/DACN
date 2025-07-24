@@ -11,7 +11,7 @@ const FeaturesSection = () => {
               <i className="fas fa-shipping-fast"></i>
             </div>
             <h3 className="text-lg font-bold mb-2">Giao hàng miễn phí</h3>
-            <p className="text-gray-500">Cho đơn hàng từ 2 triệu đồng</p>
+            <p className="text-gray-500">Cho tất cả các đơn hàng</p>
           </div>
         </Col>
         <Col xs={24} sm={8}>

@@ -53,8 +53,8 @@ const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [variants, setVariants] = useState([]);
-  const [selectedColor, setSelectedColor] = useState(null);
-  const [selectedStorage, setSelectedStorage] = useState(null);
+  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedStorage, setSelectedStorage] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -65,61 +65,114 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
 
+  const sortStorage = (storageList) => {
+    return storageList.sort((a, b) => {
+      const getStorageValue = (storage) => {
+        const match = storage.match(/(\d*\.?\d+)(GB|TB)/);
+        if (!match) return 0;
+        const value = parseFloat(match[1]);
+        const unit = match[2];
+        return unit === "TB" ? value * 1024 : value; 
+      };
+      return getStorageValue(a) - getStorageValue(b);
+    });
+  };
+
+  const renderStatus = () => {
+    if (!selectedVariant) {
+      return (
+        <p style={{ color: "orange", fontWeight: "bold"  }}>Sản phẩm hiện đã ngừng bán!</p>
+      );
+    }
+    if (selectedVariant.disabled) {
+      return (
+        <p style={{ color: "gray", fontWeight: "bold" }}>
+          Sản phẩm này đã ngừng bán.
+        </p>
+      );
+    }
+    if (selectedVariant.soluong === 0) {
+      return (
+        <p style={{ color: "red", fontWeight: "bold" }}>
+          Sản phẩm này hiện đã hết hàng.
+        </p>
+      );
+    }
+    return <p style={{ color: "green" }}>Sản phẩm còn hàng.</p>;
+  };
+
   useEffect(() => {
     const fetchProductAndVariants = async () => {
       try {
-        console.log("ID from useParams (variant ID):", id);
+        console.log("ID từ useParams (variant ID):", id);
         if (!id || isNaN(id)) {
-          console.error("Invalid variant ID:", id);
+          console.error("ID biến thể không hợp lệ:", id);
           message.error("ID biến thể sản phẩm không hợp lệ!");
           setLoading(false);
           return;
         }
 
-        // Bước 1: Lấy thông tin biến thể để lấy sanPhamId
+        // Lấy thông tin biến thể để lấy sanPhamId
         const variantRes = await axiosInstance.get(`/api/variants/${id}`);
         const variantData = variantRes.data;
-        console.log("Variant data:", variantData);
+        console.log("Dữ liệu biến thể:", variantData);
 
         if (!variantData.sanPhamId) {
-          console.error("No sanPhamId found in variant data:", variantData);
+          console.error(
+            "Không tìm thấy sanPhamId trong dữ liệu biến thể:",
+            variantData
+          );
           message.error("Không tìm thấy ID sản phẩm liên quan!");
           setLoading(false);
           return;
         }
 
-        // Bước 2: Lấy thông tin sản phẩm dựa trên sanPhamId
+        // Lấy thông tin sản phẩm dựa trên sanPhamId
         const productRes = await axiosInstance.get(
           `/api/sanpham/${variantData.sanPhamId}`
         );
         const productData = productRes.data;
-        console.log("Product data:", productData);
+        console.log("Dữ liệu sản phẩm:", productData);
 
         if (!productData.specs) {
-          console.warn("No specs data found for product:", productData);
+          console.warn(
+            "Không tìm thấy dữ liệu specs cho sản phẩm:",
+            productData
+          );
           message.warning("Thông tin sản phẩm không đầy đủ!");
         }
 
-        // Bước 3: Lấy danh sách biến thể và sản phẩm tương tự
-        const [variantsRes, relatedRes] = await Promise.all([
+        // Lấy danh sách biến thể và sản phẩm tương tự
+        const [variantsRes, relatedRes, reviewsRes] = await Promise.all([
           axiosInstance
             .get(`/api/variants/sanpham/${variantData.sanPhamId}`)
             .catch((err) => {
               console.error(
-                `Error fetching variants for sanPhamId ${variantData.sanPhamId}:`,
+                `Lỗi khi lấy biến thể cho sanPhamId ${variantData.sanPhamId}:`,
                 err
               );
               return { data: [] };
             }),
           axiosInstance.get(`/api/variants/${id}/related`).catch((err) => {
             console.error(
-              `Error fetching related products for variant ID ${id}:`,
+              `Lỗi khi lấy sản phẩm tương tự cho variant ID ${id}:`,
               err
             );
             return { data: [] };
           }),
+          axiosInstance
+            .get(`/api/sanpham/${variantData.sanPhamId}`)
+            .catch((err) => {
+              console.error(
+                `Lỗi khi lấy đánh giá cho sanPhamId ${variantData.sanPhamId}:`,
+                err
+              );
+              return { data: { rating: 0, reviewCount: 0, reviews: [] } };
+            }),
         ]);
-        const variantsData = variantsRes.data;
+
+        // Lọc các biến thể có disabled = false
+        const variantsData = variantsRes.data.filter((v) => !v.disabled);
 
         const images = Array.isArray(productData.images)
           ? productData.images.map((img) =>
@@ -137,38 +190,36 @@ const ProductDetail = () => {
 
         setProduct({
           id: productData.id || variantData.sanPhamId,
-          name: productData.tensp || "Unknown Product",
-          rating: productData.rating || 0,
-          reviewCount: productData.reviewCount || 0,
-          originalPrice: productData.originalPrice || productData.gia || 0,
-          discountPrice: productData.gia || 0,
-          discount: productData.discount || 0,
+          name: productData.tensp || "Sản phẩm không xác định",
+          rating: reviewsRes.data.rating || 0,
+          reviewCount: reviewsRes.data.reviewCount || 0,
           images: images,
           specs: {
-            screen: productData.specs?.screen || "Unknown",
-            cpu: productData.specs?.cpu || "Unknown",
-            ram: productData.specs?.ram || "Unknown",
+            screen: productData.specs?.screen || "Không xác định",
+            cpu: productData.specs?.cpu || "Không xác định",
+            ram: productData.specs?.ram || "Không xác định",
             storageRange:
               productData.specs?.storageRange ||
               productData.dungluong ||
-              "Unknown",
-            camera: productData.specs?.camera || "Unknown",
-            frontCamera: productData.specs?.frontCamera || "Unknown",
-            battery: productData.specs?.battery || "Unknown",
-            os: productData.specs?.os || "Unknown",
+              "Không xác định",
+            camera: productData.specs?.camera || "Không xác định",
+            frontCamera: productData.specs?.frontCamera || "Không xác định",
+            battery: productData.specs?.battery || "Không xác định",
+            os: productData.specs?.os || "Không xác định",
           },
-          description: productData.ghichu || "No description available",
+          description: productData.ghichu || "Không có mô tả",
           colors: [...new Set(variantsData.map((v) => v.color))],
-          storage: [...new Set(variantsData.map((v) => v.storage))],
+          storage: sortStorage([...new Set(variantsData.map((v) => v.storage))]),
         });
 
         setVariants(variantsData || []);
         setRelatedProducts(relatedRes.data || []);
+        setReviewList(reviewsRes.data.reviews || []);
         setSelectedImage(images[0]);
 
         if (variantsData.length > 0) {
-          setSelectedColor(variantsData[0].color);
-          setSelectedStorage(variantsData[0].storage);
+          setSelectedColor(variantData.color);
+          setSelectedStorage(variantData.storage);
         }
       } catch (error) {
         console.error("Lỗi khi tải sản phẩm:", error);
@@ -185,6 +236,8 @@ const ProductDetail = () => {
     if (id) fetchProductAndVariants();
   }, [id]);
 
+  const isOutOfStock = selectedVariant?.soluong === 0 || selectedVariant?.disabled;
+
   useEffect(() => {
     const matched = variants.find(
       (v) => v.color === selectedColor && v.storage === selectedStorage
@@ -193,17 +246,29 @@ const ProductDetail = () => {
     setSelectedVariant(matched || null);
   }, [selectedColor, selectedStorage, variants]);
 
-  const handleReviewSubmit = (values) => {
-    const newReview = {
-      author: "Người dùng",
-      avatar: "https://via.placeholder.com/50?text=User",
-      rating: values.rating || 0,
-      date: new Date().toLocaleDateString("vi-VN"),
-      content: values.comment || "",
-    };
-    setReviewList([newReview, ...reviewList]);
-    setShowReviewForm(false);
-    message.success("Cảm ơn bạn đã đánh giá sản phẩm!");
+  const handleReviewSubmit = async (values) => {
+    try {
+      const newReview = {
+        sanPhamId: product.id,
+        rating: values.rating || 0,
+        content: values.comment || "",
+      };
+      await axiosInstance.post("/api/reviews", newReview);
+      setReviewList([
+        {
+          author: "Người dùng",
+          avatar: "https://via.placeholder.com/50?text=User",
+          ...newReview,
+          date: new Date().toLocaleDateString("vi-VN"),
+        },
+        ...reviewList,
+      ]);
+      setShowReviewForm(false);
+      message.success("Cảm ơn bạn đã đánh giá sản phẩm!");
+    } catch (error) {
+      console.error("Lỗi khi gửi đánh giá:", error);
+      message.error("Không thể gửi đánh giá. Vui lòng thử lại!");
+    }
   };
 
   const handleBuyNow = async () => {
@@ -215,16 +280,21 @@ const ProductDetail = () => {
     }
 
     if (!selectedVariant) {
-      message.error("Vui lòng chọn màu sắc và dung lượng!");
+      message.error("Sản phẩm hiện đã ngừng bán!");
       return;
     }
 
-    if (selectedVariant.soLuong === 0) {
+    if (selectedVariant.disabled) {
+      message.error("Sản phẩm đã ngừng bán!");
+      return;
+    }
+
+    if (selectedVariant.soluong === 0) {
       message.error("Sản phẩm đã hết hàng!");
       return;
     }
 
-    if (quantity < 1 || quantity > selectedVariant.soLuong) {
+    if (quantity < 1 || quantity > selectedVariant.soluong) {
       message.error("Số lượng không hợp lệ!");
       return;
     }
@@ -298,22 +368,27 @@ const ProductDetail = () => {
       message.warning("Vui lòng chọn màu sắc và dung lượng!");
       return;
     }
-    if (selectedVariant?.soLuong === 0) {
+    if (selectedVariant?.disabled) {
+      message.warning("Sản phẩm đã ngừng bán!");
+      return;
+    }
+    if (selectedVariant?.soluong === 0) {
       message.warning("Sản phẩm đã hết hàng!");
       return;
     }
+
     setIsLoading(true);
     try {
       await axiosInstance.post(
-        `/api/cart/${selectedVariant?.id}/add?soLuongThem=1`
+        `/api/cart/${selectedVariant?.id}/add?soLuongThem=${quantity}`
       );
       message.success("Đã thêm sản phẩm vào giỏ hàng!");
       window.dispatchEvent(new Event("cart-updated"));
     } catch (error) {
       console.error("Lỗi khi thêm vào giỏ hàng:", error);
-      console.error("Response status:", error.response?.status);
-      console.error("Response data:", error.response?.data);
-      message.error("Không thể thêm vào giỏ hàng!");
+      message.error(
+        error.response?.data?.message || "Không thể thêm vào giỏ hàng!"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -374,7 +449,7 @@ const ProductDetail = () => {
                   }
                   alt={product.name}
                   className={`object-contain h-full transition-transform duration-300 hover:scale-110 ${
-                    selectedVariant?.soLuong === 0 ? "opacity-50" : ""
+                    isOutOfStock ? "opacity-50" : ""
                   }`}
                   onError={(e) =>
                     (e.target.src = "https://placehold.co/500x500?text=Error")
@@ -422,7 +497,7 @@ const ProductDetail = () => {
                 <div className="flex items-center mb-4">
                   <Rate
                     allowHalf
-                    defaultValue={product.rating}
+                    value={product.rating}
                     disabled
                     className="text-yellow-400 text-sm"
                   />
@@ -435,12 +510,16 @@ const ProductDetail = () => {
                     <Text className="text-2xl font-bold text-red-600">
                       {selectedVariant?.gia?.toLocaleString("vi-VN")} ₫
                     </Text>
-                    <Text className="text-gray-500 line-through">
-                      {product.originalPrice.toLocaleString("vi-VN")} ₫
-                    </Text>
-                    <Tag color="red" className="rounded-full">
-                      -{product.discount}%
-                    </Tag>
+                    {selectedVariant?.discount > 0 && (
+                      <>
+                        <Text className="text-gray-500 line-through">
+                          {selectedVariant.originalPrice.toLocaleString("vi-VN")} ₫
+                        </Text>
+                        <Tag color="red" className="rounded-full">
+                          -{selectedVariant.discount}%
+                        </Tag>
+                      </>
+                    )}
                   </div>
                   <Text className="text-green-600 block mt-1">
                     Trả góp chỉ từ 900.000₫/tháng
@@ -499,30 +578,53 @@ const ProductDetail = () => {
                   <Input
                     type="number"
                     min={1}
-                    max={selectedVariant?.soLuong || 10}
+                    max={selectedVariant?.soluong || 10}
                     value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      const maxQuantity = selectedVariant?.soluong || 1;
+                      if (value > maxQuantity) {
+                        message.warning(
+                          `Chỉ còn lại ${maxQuantity} sản phẩm trong kho!`
+                        );
+                        setQuantity(maxQuantity);
+                      } else if (value < 1) {
+                        setQuantity(1);
+                      } else {
+                        setQuantity(value);
+                      }
+                    }}
                     style={{ width: 100 }}
+                    disabled={isOutOfStock}
                   />
                 </div>
+                <div style={{ marginBottom: "16px" }}>{renderStatus()}</div>
                 <div className="flex flex-col sm:flex-row gap-4 mb-6">
                   <Button
                     type="primary"
                     size="large"
-                    disabled={selectedVariant?.soLuong === 0}
-                    loading={isLoading}
-                    icon={<ThunderboltOutlined />}
                     danger
-                    className="flex-1 h-12 text-base font-medium !rounded-full"
+                    loading={isLoading}
+                    disabled={isOutOfStock}
+                    icon={<ThunderboltOutlined />}
+                    className={`flex-1 h-12 text-base font-medium !rounded-full ${
+                      isOutOfStock
+                        ? "!bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
+                        : ""
+                    }`}
                     onClick={handleBuyNow}
                   >
                     Mua ngay
                   </Button>
                   <Button
                     size="large"
-                    disabled={selectedVariant?.soLuong === 0}
+                    disabled={isOutOfStock}
                     icon={<ShoppingCartOutlined />}
-                    className="flex-1 h-12 border-red-500 text-red-500 hover:bg-red-50 !rounded-full"
+                    className={`flex-1 h-12 !rounded-full ${
+                      isOutOfStock
+                        ? "!bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed"
+                        : "border-red-500 text-red-500 hover:bg-red-50"
+                    }`}
                     onClick={handleAddToCart}
                   >
                     Thêm vào giỏ hàng
@@ -752,48 +854,65 @@ const ProductDetail = () => {
                   children: (
                     <div className="mt-4">
                       <Row gutter={[16, 24]}>
-                        {relatedProducts.map((item) => (
-                          <Col xs={24} sm={12} md={6} key={item.id}>
-                            <Card
-                              hoverable
-                              cover={
-                                <img
-                                  src={
-                                    item.imageUrl
-                                      ? item.imageUrl.startsWith("http")
-                                        ? item.imageUrl
-                                        : `http://localhost:8080/images/products/${item.imageUrl}`
-                                      : "https://placehold.co/220x220?text=No+Image"
-                                  }
-                                  alt={item.tensp}
-                                  className="p-4 object-contain h-48"
-                                  onError={(e) => {
-                                    e.target.src =
-                                      "https://placehold.co/220x220?text=No+Image";
-                                  }}
-                                />
-                              }
-                              className="text-center cursor-pointer !rounded-lg"
-                              onClick={() => navigate(`/product/${item.id}`)}
-                            >
-                              <Card.Meta
-                                title={item.tensp}
-                                description={
-                                  <div>
-                                    <Text className="text-red-600 font-medium block">
-                                      {item.gia?.toLocaleString("vi-VN")} ₫
-                                    </Text>
-                                    <Rate
-                                      disabled
-                                      defaultValue={item.rating || 4.5}
-                                      className="text-yellow-400 text-xs mt-1"
-                                    />
-                                  </div>
+                        {relatedProducts
+                          .filter((item) => !item.disabled)
+                          .map((item) => (
+                            <Col xs={24} sm={12} md={6} key={item.id}>
+                              <Card
+                                hoverable
+                                cover={
+                                  <img
+                                    src={
+                                      item.imageUrl
+                                        ? item.imageUrl.startsWith("http")
+                                          ? item.imageUrl
+                                          : `http://localhost:8080/images/products/${item.imageUrl}`
+                                        : "https://placehold.co/220x220?text=No+Image"
+                                    }
+                                    alt={item.tensp}
+                                    className="p-4 object-contain h-48"
+                                    onError={(e) => {
+                                      e.target.src =
+                                        "https://placehold.co/220x220?text=No+Image";
+                                    }}
+                                  />
                                 }
-                              />
-                            </Card>
-                          </Col>
-                        ))}
+                                className="text-center cursor-pointer !rounded-lg"
+                                onClick={() =>
+                                  navigate(`/product/${item.id}`, {
+                                    state: {
+                                      color: item.color,
+                                      storage: item.storage,
+                                    },
+                                  })
+                                }
+                              >
+                                <Card.Meta
+                                  title={item.tensp}
+                                  description={
+                                    <div>
+                                      <Text className="text-red-600 font-medium block">
+                                        {item.gia?.toLocaleString("vi-VN")} ₫
+                                      </Text>
+                                      {item.discount > 0 && (
+                                        <Text className="text-gray-500 line-through block">
+                                          {item.originalPrice.toLocaleString("vi-VN")} ₫
+                                        </Text>
+                                      )}
+                                      <Text className="block text-gray-500">
+                                        {item.color} - {item.storage}
+                                      </Text>
+                                      <Rate
+                                        disabled
+                                        value={item.rating || 0}
+                                        className="text-yellow-400 text-xs mt-1"
+                                      />
+                                    </div>
+                                  }
+                                />
+                              </Card>
+                            </Col>
+                          ))}
                       </Row>
                     </div>
                   ),

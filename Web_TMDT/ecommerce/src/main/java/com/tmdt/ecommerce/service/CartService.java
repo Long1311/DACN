@@ -7,12 +7,12 @@ import com.tmdt.ecommerce.model.User;
 import com.tmdt.ecommerce.repository.CartItemsRepository;
 import com.tmdt.ecommerce.repository.CartsRepository;
 import com.tmdt.ecommerce.repository.SanPhamVariantRepository;
-import com.tmdt.ecommerce.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CartService {
@@ -26,19 +26,34 @@ public class CartService {
     @Autowired
     private CartsRepository cartRepository;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    public List<CartItems> getCartItems(Long userId) {
-        return cartItemsRepository.findByCart_User_Id(userId);
+    @Transactional
+    public void clearCart(Long userId) {
+        System.out.println(">>> clearCart CALLED for userId: " + userId);
+        List<CartItems> selectedItems = cartItemsRepository.findByCart_User_IdAndSelected(userId, true);
+        System.out.println(">>> Số mục đã chọn để xóa: " + selectedItems.size() + ", Danh sách ID: " + selectedItems.stream().map(CartItems::getId).collect(Collectors.toList()));
+        if (selectedItems.isEmpty()) {
+            System.out.println(">>> Không tìm thấy mục nào với selected = true cho userId: " + userId);
+            List<CartItems> allItems = cartItemsRepository.findByCart_User_Id(userId);
+            System.out.println(">>> Tất cả các mục cho userId: " + userId + ", Danh sách: " + allItems.stream().map(ci -> "ID: " + ci.getId() + ", Cart User ID: " + (ci.getCart() != null && ci.getCart().getUser() != null ? ci.getCart().getUser().getId() : "null") + ", Selected: " + ci.getSelected()).collect(Collectors.toList()));
+        } else {
+            try {
+                cartItemsRepository.deleteAll(selectedItems);
+                System.out.println(">>> Đã xóa " + selectedItems.size() + " mục trong giỏ hàng của userId: " + userId);
+            } catch (Exception e) {
+                System.out.println(">>> Lỗi khi xóa: " + e.getMessage());
+            }
+        }
     }
 
     public void addVariantToCart(User user, SanPhamVariant variant, int soLuongThem) {
         Carts cart = cartRepository.findByUser(user)
-                .orElseGet(() -> {
-                    Carts newCart = new Carts(user);
-                    return cartRepository.save(newCart);
-                });
+                .orElseGet(() -> cartRepository.save(new Carts(user)));
+
+        int soLuongConLai = getSoLuongConLaiChoUser(variant.getId(), user.getId());
+
+        if (soLuongThem > soLuongConLai) {
+            throw new RuntimeException("Số lượng yêu cầu vượt quá số lượng tồn kho còn lại. Chỉ còn lại: " + soLuongConLai);
+        }
 
         CartItems existingItem = cartItemsRepository.findByCartAndVariant(cart, variant).orElse(null);
 
@@ -60,7 +75,7 @@ public class CartService {
         return cartRepository.findByUser(user)
                 .orElseGet(() -> {
                     Carts newCart = new Carts(user);
-                    return cartRepository.save(newCart); // ✅ tự động tạo mới nếu chưa có
+                    return cartRepository.save(newCart);
                 });
     }
 
@@ -76,18 +91,16 @@ public class CartService {
         Carts cart = item.getCart();
         cart.getCartItems().remove(item);
 
-        cartItemsRepository.delete(item); //XÓA KHỎI DB
+        cartItemsRepository.delete(item);
         System.out.println("XÓA: " + cartItemId);
     }
 
-    public void saveCart(Carts cart) {
-        cartRepository.save(cart);
-    }
+    public int getSoLuongConLaiChoUser(Long variantId, Long userId) {
+        SanPhamVariant variant = sanPhamVariantRepository.findById(variantId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
-    @Transactional
-    public void clearCart(Long userId) {
-        List<CartItems> cartItems = cartItemsRepository.findByCart_User_Id(userId);
-        cartItemsRepository.deleteAll(cartItems);
+        int trongGioUser = cartItemsRepository.sumSoLuongByUserAndVariant(userId, variantId);
+        return variant.getSoluong() - trongGioUser;
     }
 
     @Transactional
@@ -95,31 +108,22 @@ public class CartService {
         CartItems cartItem = cartItemsRepository.findById(cartItemId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy mục giỏ hàng"));
 
-        if (soluong != null) cartItem.setSoluong(soluong);
-        if (selected != null) cartItem.setSelected(selected);
+        if (soluong != null) {
+            Long userId = cartItem.getCart().getUser().getId();
+            Long variantId = cartItem.getVariant().getId();
+            int tongTrongGio = cartItemsRepository.sumSoLuongByUserAndVariant(userId, variantId);
+            int hienTaiTrongMucNay = cartItem.getSoluong();
+            int soLuongConLai = cartItem.getVariant().getSoluong() - (tongTrongGio - hienTaiTrongMucNay);
 
-        cartItemsRepository.save(cartItem);
-    }
-
-    @Transactional
-    public void checkout(Long userId, String paymentMethod) {
-        // Tìm người dùng
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại: " + userId));
-
-        // Tìm giỏ hàng tương ứng với người dùng
-        Carts cart = cartRepository.findByUser(user)
-                .orElseThrow(() -> new IllegalArgumentException("Giỏ hàng không tồn tại cho người dùng: " + userId));
-
-        // Tìm các mục đã chọn để thanh toán
-        List<CartItems> selectedItems = cartItemsRepository.findByCartAndSelected(cart, true);
-
-        if (selectedItems.isEmpty()) {
-            throw new IllegalStateException("Không có sản phẩm nào được chọn để thanh toán");
+            if (soluong > soLuongConLai) {
+                throw new RuntimeException("Số lượng yêu cầu vượt quá tồn kho. Tối đa có thể mua: " + soLuongConLai);
+            }
+            cartItem.setSoluong(soluong);
         }
-
-        // Xoá các mục đã thanh toán khỏi giỏ hàng
-        selectedItems.forEach(cartItemsRepository::delete);
+        if (selected != null) {
+            cartItem.setSelected(selected);
+        }
+        cartItemsRepository.save(cartItem);
     }
 
     public SanPhamVariant getVariantById(Long id) {

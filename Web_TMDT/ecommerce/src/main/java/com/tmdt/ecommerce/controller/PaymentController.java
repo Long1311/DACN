@@ -2,6 +2,7 @@ package com.tmdt.ecommerce.controller;
 
 import com.tmdt.ecommerce.config.VnPayCofig;
 import com.tmdt.ecommerce.model.User;
+import com.tmdt.ecommerce.repository.UserRepository;
 import com.tmdt.ecommerce.service.CartService;
 import com.tmdt.ecommerce.service.OrderService;
 import com.tmdt.ecommerce.service.UserService;
@@ -36,6 +37,10 @@ public class PaymentController {
     private UserService userService;
 
     @Autowired
+    private UserRepository userRepository;
+
+
+    @Autowired
     private JwtUtil jwtUtil;
 
     @PostMapping("/create-payment")
@@ -50,17 +55,26 @@ public class PaymentController {
             String mode = (String) payload.get("mode");
             long amount = ((Number) payload.get("amount")).longValue();
 
-            // Tạo thông tin đơn hàng tạm thời vào vnp_OrderInfo
-            String orderInfo = mode;
+            User user = userService.findByUsername(username).orElseThrow();
+            Long orderId;
+
+            // ➤ Tạo đơn hàng PENDING trước
             if ("detail".equals(mode)) {
                 Long variantId = ((Number) payload.get("variantId")).longValue();
                 int soluong = ((Number) payload.get("soluong")).intValue();
-                orderInfo += "|variantId=" + variantId + "|soluong=" + soluong;
+                orderId = orderService.createPendingOrderFromProduct(username, variantId, soluong);
+            } else {
+                orderId = orderService.createPendingOrderFromCart(username);
             }
 
-            // Tạo URL thanh toán VNPay
+            // ➤ Chuẩn bị redirect đến VNPay
+            String orderInfo = mode;
+            if ("detail".equals(mode)) {
+                orderInfo += "|variantId=" + payload.get("variantId") + "|soluong=" + payload.get("soluong");
+            }
+
             String ipAddr = request.getRemoteAddr();
-            String txnRef = String.valueOf(System.currentTimeMillis());
+            String txnRef = user.getId() + "_" + orderId;
 
             Map<String, String> vnp_Params = new HashMap<>();
             vnp_Params.put("vnp_Version", "2.1.0");
@@ -110,26 +124,25 @@ public class PaymentController {
                 return ResponseEntity.ok(Map.of("status", "fail"));
             }
 
-            String token = extractTokenFromRequest(request);
-            if (token == null) {
-                return ResponseEntity.status(401).body(Map.of("status", "unauthorized"));
-            }
+            String txnRef = request.getParameter("vnp_TxnRef");
+            String[] parts = txnRef.split("_");
+            Long userId = Long.parseLong(parts[0]);
+            Long orderId = Long.parseLong(parts[1]);
 
-            String username = jwtUtil.extractUsername(token);
-            String orderInfo = request.getParameter("vnp_OrderInfo"); // e.g., "cart" hoặc "detail|variantId=3|soluong=1"
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng ID = " + userId));
+            String username = user.getUsername();
 
-            if (orderInfo.startsWith("detail")) {
-                Long variantId = Long.parseLong(extractValue(orderInfo, "variantId"));
-                int soluong = Integer.parseInt(extractValue(orderInfo, "soluong"));
-                orderService.createOrderFromProductEntity(username, variantId, soluong, "VNPAY", request);
-            } else {
-                orderService.createOrderEntity(username, "VNPAY");
-                User user = userService.findByUsername(username)
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng: " + username));
-                cartService.clearCart(user.getId());
+            String orderInfo = request.getParameter("vnp_OrderInfo");
+            System.out.println("🧾 VNPay orderInfo: " + orderInfo);
+
+            if (orderInfo != null && orderInfo.startsWith("cart")) {
+                cartService.clearCart(userId);
+                System.out.println(">>> HANDLE VNPAY RETURN: userId = " + userId);
             }
 
             return ResponseEntity.ok(Map.of("status", "success"));
+
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("status", "error"));

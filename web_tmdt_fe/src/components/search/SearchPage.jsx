@@ -27,7 +27,8 @@ const SearchPage = () => {
       const response = await axios.get(
         `http://localhost:8080/api/variants/search?keyword=${key}&page=0&size=30`
       );
-      setProducts(response.data.content || []);
+      const filteredProducts = (response.data.content || []).filter(product => !product.disabled);
+      setProducts(filteredProducts);
     } catch (error) {
       console.error("Lỗi tìm kiếm:", error);
     } finally {

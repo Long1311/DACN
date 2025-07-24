@@ -75,8 +75,19 @@ public class SanPhamVariantController {
     @GetMapping("/featured")
     public List<SanPhamVariantResponse> getFeaturedVariants() {
         List<SanPhamVariant> variants = variantService.getFeaturedVariants();
-        return variants.stream().map(this::mapToResponse).collect(Collectors.toList());
+
+        Map<Long, SanPhamVariant> uniqueMap = variants.stream()
+                .collect(Collectors.toMap(
+                        SanPhamVariant::getId,
+                        v -> v,
+                        (existing, replacement) -> existing
+                ));
+
+        return uniqueMap.values().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
+
 
     @GetMapping("/filter")
     public List<SanPhamVariantResponse> filterByAttributes(

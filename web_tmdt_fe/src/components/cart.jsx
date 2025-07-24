@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import {
-  Radio,
   InputNumber,
   Checkbox,
   Button,
   Badge,
   message,
   Spin,
+  notification,
 } from "antd";
 import { DeleteOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -34,36 +34,49 @@ const Cart = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const query = new URLSearchParams(location.search);
-    const responseCode = query.get("vnp_ResponseCode");
+  const query = new URLSearchParams(location.search);
+  const responseCode = query.get("vnp_ResponseCode");
 
-    if (!responseCode) return;
+  if (!responseCode || sessionStorage.getItem("vnpay-checked")) return;
 
-    const confirmPayment = async () => {
-      try {
-        const response = await fetch(
-          `http://localhost:8080/api/payment/vnpay-return?${location.search}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        const data = await response.json();
+  sessionStorage.setItem("vnpay-checked", "true");
 
-        if (data.status === "success") {
-          message.success("🎉 Thanh toán thành công!");
-          await fetchCartItems();
-        } else {
-          message.error("❌ Thanh toán thất bại!");
+  const confirmPayment = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/payment/vnpay-return?${location.search}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
         }
-      } catch {
-        message.error("Lỗi khi xác minh giao dịch VNPay.");
-      } finally {
-        setTimeout(() => window.history.replaceState(null, "", "/cart"), 2000);
-      }
-    };
+      );
 
-    confirmPayment();
-  }, [location.search, token]);
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text);
+      }
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        message.success("🎉 Thanh toán thành công!");
+        await fetchCartItems();
+      } else {
+        message.error("❌ Thanh toán thất bại!");
+      }
+    } catch (error) {
+      console.error("VNPAY CONFIRM ERROR:", error);
+      message.error("❌ Không thể xác minh thanh toán: " + error.message);
+    } finally {
+      setTimeout(() => {
+        window.history.replaceState(null, "", "/cart");
+        sessionStorage.removeItem("vnpay-checked");
+      }, 2000);
+    }
+  };
+
+  confirmPayment();
+}, [location.search, token]);
+
 
   const fetchCartItems = async () => {
     setLoading(true);
@@ -113,15 +126,32 @@ const Cart = () => {
   const handleSoluongChange = async (id, value) => {
     if (!value || value < 1) return;
     try {
-      await fetch(
+      const res = await fetch(
         `http://localhost:8080/api/cart/update?cartItemId=${id}&soluong=${value}`,
-        { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+
       setProducts((prev) =>
         prev.map((p) => (p.id === id ? { ...p, soluong: value } : p))
       );
     } catch (error) {
-      message.error("Lỗi khi cập nhật số lượng: " + error.message);
+      notification.error({
+        description: error.message.includes("tồn kho")
+          ? error.message
+          : "Vui lòng thử lại sau.",
+        duration: 5,
+        placement: "topRight",
+      });
     }
   };
 
@@ -173,34 +203,53 @@ const Cart = () => {
     }
   };
 
-  const handleCheckout = () => {
-    const selected = products.filter((p) => p.selected);
-    if (selected.length === 0) {
-      message.warning("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
-      return;
-    }
+  const handleCheckout = async () => {
+  const selected = products.filter((p) => p.selected);
+  if (selected.length === 0) {
+    message.warning("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
+    return;
+  }
 
-    const checkoutProducts = selected.map((p) => {
-      const [color = "", storage = ""] = p.variantName?.split(" - ") || [];
-      return {
-        ...p,
-        image: p.images?.[0] || "",
-        color,
-        storage,
-        phanloai: color && storage ? `${color} - ${storage}` : "",
-      };
-    });
-
-    sessionStorage.setItem(
-      "checkoutProducts",
-      JSON.stringify(checkoutProducts)
+  const token = localStorage.getItem("token");
+  try {
+    // ✅ Cập nhật selected=true cho từng sản phẩm trong giỏ hàng
+    await Promise.all(
+      selected.map((p) =>
+        fetch(
+          `http://localhost:8080/api/cart/update?cartItemId=${p.id}&selected=true`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+      )
     );
-    sessionStorage.setItem("checkoutPaymentMethod", paymentMethod);
+  } catch (error) {
+    message.error("Không thể cập nhật giỏ hàng. Vui lòng thử lại!");
+    return;
+  }
 
-    navigate("/thanhtoan", {
-      state: { products: checkoutProducts, paymentMethod },
-    });
-  };
+  const checkoutProducts = selected.map((p) => {
+    const [color = "", storage = ""] = p.variantName?.split(" - ") || [];
+    return {
+      ...p,
+      image: p.images?.[0] || "",
+      color,
+      storage,
+      phanloai: color && storage ? `${color} - ${storage}` : "",
+    };
+  });
+
+  sessionStorage.setItem("checkoutProducts", JSON.stringify(checkoutProducts));
+  sessionStorage.setItem("checkoutPaymentMethod", paymentMethod);
+
+  navigate("/thanhtoan", {
+    state: { products: checkoutProducts, paymentMethod, mode: "cart" },
+  });
+};
+
 
   const formatCurrency = (amount) =>
     new Intl.NumberFormat("vi-VN", {
@@ -298,7 +347,6 @@ const Cart = () => {
                           <div className="flex items-center space-x-6">
                             <InputNumber
                               min={1}
-                              max={10}
                               value={product.soluong}
                               onChange={(value) =>
                                 handleSoluongChange(product.id, value)

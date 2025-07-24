@@ -44,14 +44,16 @@ const DiscountPage = () => {
       );
       const data = Array.isArray(res.data) ? res.data : [];
 
-      const formatted = data.map((product) => ({
-        ...product,
-        imageUrl: product.imageUrl
-          ? product.imageUrl.startsWith("http")
-            ? product.imageUrl
-            : `http://localhost:8080/images/products/${product.imageUrl}`
-          : "https://via.placeholder.com/200?text=No+Image",
-      }));
+      const formatted = data
+        .filter((product) => !product.disabled)
+        .map((product) => ({
+          ...product,
+          imageUrl: product.imageUrl
+            ? product.imageUrl.startsWith("http")
+              ? product.imageUrl
+              : `http://localhost:8080/images/products/${product.imageUrl}`
+            : "https://via.placeholder.com/200?text=No+Image",
+        }));
 
       setProducts(formatted);
     } catch (error) {

@@ -47,8 +47,7 @@ public class SanPhamVariantService{
     }
 
     public List<SanPhamVariant> getDiscountedVariants() {
-        Pageable top8 = PageRequest.of(0, 8);
-        return variantRepository.findTopDiscountedVariants(top8);
+        return variantRepository.findTopDiscountedVariants();
     }
 
 
@@ -63,10 +62,21 @@ public class SanPhamVariantService{
                         top5
                 ).stream()
                 .map(response -> variantRepository.findById(response.getVariantId()).orElse(null))
-                .filter(v -> v != null)
+                .filter(v -> v != null && !v.isDisabled())
                 .toList();
 
-        List<SanPhamVariant> newest = variantRepository.findTop3ByOrderByCreatedAtDesc();
+        int remaining = 8 - bestSellers.size();
+        List<SanPhamVariant> newest = new ArrayList<>();
+
+        if (remaining > 0) {
+            List<SanPhamVariant> newestCandidates = variantRepository.findTopNewestVariants(PageRequest.of(0, remaining + bestSellers.size()));
+            for (SanPhamVariant variant : newestCandidates) {
+                if (!variant.isDisabled() && bestSellers.stream().noneMatch(b -> b.getId().equals(variant.getId()))) {
+                    newest.add(variant);
+                    if (newest.size() >= remaining) break;
+                }
+            }
+        }
 
         List<SanPhamVariant> combined = new ArrayList<>(bestSellers);
         combined.addAll(newest);
@@ -80,7 +90,7 @@ public class SanPhamVariantService{
 
     public Page<SanPhamVariant> searchByKeywordPaged(String keyword, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return variantRepository.findBySanPham_TenspContainingIgnoreCase(keyword, pageable);
+        return variantRepository.searchByKeyword(keyword, pageable);
     }
 
     public List<SanPhamVariant> findByColor(String color) {

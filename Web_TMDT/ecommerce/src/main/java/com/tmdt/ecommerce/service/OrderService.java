@@ -2,11 +2,8 @@ package com.tmdt.ecommerce.service;
 
 import com.tmdt.ecommerce.api.response.OrderItemsResponse;
 import com.tmdt.ecommerce.api.response.OrderResponse;
-import com.tmdt.ecommerce.config.VnPayCofig;
 import com.tmdt.ecommerce.model.*;
-import com.tmdt.ecommerce.repository.CartItemsRepository;
-import com.tmdt.ecommerce.repository.OrdersRepository;
-import com.tmdt.ecommerce.repository.UserRepository;
+import com.tmdt.ecommerce.repository.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,17 +30,16 @@ public class OrderService {
     private CartItemsRepository cartItemsRepository;
 
     @Autowired
-    private VnPayCofig vnPayCofig;
+    private SanPhamVariantRepository sanPhamVariantRepository;
 
     @Transactional
-    public Orders createOrderEntity(String username, String paymentMethod) {
+    public Orders createOrderEntity(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng: " + username));
         Carts cart = cartService.getCartByUser(user);
 
         Orders order = new Orders();
         order.setUser(user);
-        order.setThanhtien(calculateTotal(cart));
         order.setTrangthai("PENDING");
         order.setNgaydat(new Date());
 
@@ -61,18 +57,38 @@ public class OrderService {
                         orderItem.setTensp(variant.getSanPham().getTensp());
                         orderItem.setColor(variant.getColor());
                         orderItem.setStorage(variant.getStorage());
-                    }
 
+                        if (variant.getSoluong() < item.getSoluong()) {
+                            throw new IllegalArgumentException("Sản phẩm " + variant.getSanPham().getTensp() + " không đủ hàng.");
+                        }
+
+                        variant.setSoluong(variant.getSoluong() - item.getSoluong());
+                        sanPhamVariantRepository.save(variant);
+                    }
                     return orderItem;
                 })
                 .collect(Collectors.toList());
 
+        double totalAmount = orderItems.stream()
+                .mapToDouble(item -> item.getGia().doubleValue() * item.getSoluong())
+                .sum();
+
+        order.setThanhtien(totalAmount);
         order.setOrderItems(orderItems);
-        return ordersRepository.save(order);
+
+        Orders savedOrder = ordersRepository.save(order);
+
+        List<CartItems> selectedItems = cart.getCartItems().stream()
+                .filter(CartItems::getSelected)
+                .collect(Collectors.toList());
+
+        cartItemsRepository.deleteAll(selectedItems);
+
+        return savedOrder;
     }
 
     @Transactional
-    public Orders createOrderFromProductEntity(String username, Long variantId, int soluong, String paymentMethod, HttpServletRequest request) {
+    public Orders createOrderFromProductEntity(String username, Long variantId, int soluong) {
         logger.info("Creating order (entity) for username=" + username);
 
         User user = userRepository.findByUsername(username)
@@ -80,6 +96,9 @@ public class OrderService {
         SanPhamVariant variant = cartService.getVariantById(variantId);
         if (variant == null) throw new IllegalArgumentException("Không tìm thấy biến thể sản phẩm với ID: " + variantId);
         if (variant.getSoluong() < soluong) throw new IllegalArgumentException("Sản phẩm đã hết hàng hoặc số lượng không đủ");
+
+        variant.setSoluong(variant.getSoluong() - soluong);
+        sanPhamVariantRepository.save(variant);
 
         Orders order = new Orders();
         order.setUser(user);
@@ -99,13 +118,12 @@ public class OrderService {
         order.setOrderItems(List.of(orderItem));
         Orders savedOrder = ordersRepository.save(order);
 
-        logger.info("Order saved with ID: " + savedOrder.getId());
         return savedOrder;
     }
 
     @Transactional
-    public OrderResponse createOrder(String username, String paymentMethod) {
-        Orders savedOrder = createOrderEntity(username, paymentMethod);
+    public OrderResponse createOrder(String username) {
+        Orders savedOrder = createOrderEntity(username);
         return convertToOrderResponse(savedOrder);
     }
 
@@ -127,12 +145,6 @@ public class OrderService {
         return orders.stream().map(this::convertToOrderResponse).collect(Collectors.toList());
     }
 
-    private Double calculateTotal(Carts cart) {
-        return cart.getCartItems().stream()
-                .mapToDouble(item -> item.getSoluong() * item.getVariant().getGia().doubleValue())
-                .sum();
-    }
-
     public List<Double> getMonthlyRevenue() {
         List<Double> revenueByMonth = new ArrayList<>(Collections.nCopies(12, 0.0));
         List<Orders> allOrders = ordersRepository.findAll();
@@ -147,9 +159,7 @@ public class OrderService {
         return revenueByMonth;
     }
 
-
     public Map<String, Long> getOrderStatusCounts() {
-        // Lấy thời gian hiện tại
         Calendar now = Calendar.getInstance();
         int currentMonth = now.get(Calendar.MONTH);
         int currentYear = now.get(Calendar.YEAR);
@@ -175,7 +185,6 @@ public class OrderService {
 
         return mappedStatus;
     }
-
 
     public List<Integer> countOrdersByMonth() {
         List<Orders> allOrders = ordersRepository.findAll();
@@ -204,6 +213,22 @@ public class OrderService {
         ordersRepository.save(order);
     }
 
+    public boolean hasRecentPendingOrder(Long userId) {
+        Date tenMinutesAgo = new Date(System.currentTimeMillis() - 10 * 60 * 1000);
+        return ordersRepository.existsByUser_IdAndTrangthaiAndNgaydatAfter(userId, "PENDING", tenMinutesAgo);
+    }
+
+    @Transactional
+    public Long createPendingOrderFromCart(String username) {
+        Orders order = createOrderEntity(username);
+        return order.getId();
+    }
+
+    @Transactional
+    public Long createPendingOrderFromProduct(String username, Long variantId, int soluong) {
+        Orders order = createOrderFromProductEntity(username, variantId, soluong);
+        return order.getId();
+    }
 
     private OrderResponse convertToOrderResponse(Orders order) {
         return new OrderResponse(

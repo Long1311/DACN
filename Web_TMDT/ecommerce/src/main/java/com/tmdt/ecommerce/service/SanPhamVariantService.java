@@ -134,8 +134,15 @@ public class SanPhamVariantService{
                     return sanPhamRepository.save(newSanPham);
                 });
 
-        // Tạo hoặc cập nhật SanPhamVariant
         for (String storage : request.getStorages()) {
+
+            boolean exists = variantRepository.existsBySanPhamAndColorIgnoreCaseAndStorageIgnoreCase(
+                    sanPham, request.getColor(), storage
+            );
+            if (exists) {
+                throw new RuntimeException("Biến thể đã tồn tại cho màu '" + request.getColor() + "', dung lượng '" + storage + "'");
+            }
+
             SanPhamVariant variant = new SanPhamVariant();
             variant.setSanPham(sanPham);
             variant.setColor(request.getColor());

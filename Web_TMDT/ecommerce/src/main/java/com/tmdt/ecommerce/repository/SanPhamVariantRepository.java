@@ -3,6 +3,7 @@ package com.tmdt.ecommerce.repository;
 import com.tmdt.ecommerce.api.response.LowStockProductResponse;
 import com.tmdt.ecommerce.api.response.TopSellingProductResponse;
 import com.tmdt.ecommerce.model.SanPhamVariant;
+import com.tmdt.ecommerce.model.SanPham;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,6 +32,8 @@ public interface SanPhamVariantRepository extends JpaRepository<SanPhamVariant, 
     List<SanPhamVariant> findByColorIgnoreCaseAndStorageIgnoreCase(String color, String storage);
 
     List<SanPhamVariant> findTop4BySanPham_Loai_IdAndIdNot(Long loaiId, Long excludeId);
+
+    boolean existsBySanPhamAndColorIgnoreCaseAndStorageIgnoreCase(SanPham sanPham, String color, String storage);
 
     @Query("SELECT v FROM SanPhamVariant v ORDER BY v.createdAt DESC")
     List<SanPhamVariant> findTopNewestVariants(Pageable pageable);

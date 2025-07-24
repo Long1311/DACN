@@ -4,7 +4,6 @@ import com.tmdt.ecommerce.api.response.OrderItemsResponse;
 import com.tmdt.ecommerce.api.response.OrderResponse;
 import com.tmdt.ecommerce.model.*;
 import com.tmdt.ecommerce.repository.*;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
